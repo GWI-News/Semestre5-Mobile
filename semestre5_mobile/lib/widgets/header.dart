@@ -39,8 +39,7 @@ class Header extends StatelessWidget {
             : 128.0;
 
     final double logoMaxWidth =
-        containerWidth -
-        (padding is EdgeInsets ? (padding as EdgeInsets).left : 0);
+        containerWidth - (padding is EdgeInsets ? padding.left : 0);
 
     return Align(
       alignment: containerAlignment,
