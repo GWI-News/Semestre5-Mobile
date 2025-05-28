@@ -50,7 +50,7 @@ class Header extends StatelessWidget {
         decoration: const BoxDecoration(
           color: Color(0xFFEBEBEB),
           border: Border(
-            bottom: BorderSide(color: Color(0xFF1D4988), width: 8.0),
+            bottom: BorderSide(color: Color(0xFF1D4988), width: 4.0),
           ),
         ),
         child: Row(
