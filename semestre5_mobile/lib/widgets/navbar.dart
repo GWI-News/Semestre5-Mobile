@@ -71,7 +71,9 @@ class Navbar extends StatelessWidget {
             _NavbarIcon(
               icon: Icons.home_rounded,
               label: 'Home',
-              onTap: () {},
+              onTap: () {
+                Navigator.of(context).pushNamed('/home');
+              },
               iconSize: iconSize,
               labelFontSize: labelFontSize,
               verticalPadding: itemVerticalPadding,
