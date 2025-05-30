@@ -61,13 +61,12 @@ class Navbar extends StatelessWidget {
         constraints: const BoxConstraints(minWidth: 320),
         decoration: BoxDecoration(
           color: const Color(0xFFEBEBEB),
-          border: border, // Corrigido: agora a borda é aplicada
+          border: border,
         ),
         padding: containerPadding,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          crossAxisAlignment:
-              CrossAxisAlignment.center, // Corrigido para centralizar
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             _NavbarIcon(
               icon: Icons.home_rounded,
@@ -161,9 +160,7 @@ class _NavbarIconState extends State<_NavbarIcon> {
                 color: const Color(0xFF1D4988),
                 size: widget.iconSize,
               ),
-              const SizedBox(
-                height: 2,
-              ), // Alterado de 4 para 2 para diminuir o espaçamento
+              const SizedBox(height: 2),
               Text(
                 widget.label,
                 style: TextStyle(
