@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:semestre5_mobile/pages/news_page.dart';
 
 class NewsCard extends StatefulWidget {
   final Map<String, dynamic> newsItem;
@@ -32,15 +33,27 @@ class _NewsCardState extends State<NewsCard> {
       onExit: (_) => setState(() => _hovering = false),
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
-        onTap: widget.onTap,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) => NewsPage(
+                    newsCategory: widget.categoryName,
+                    newsSubcategories: widget.subcategoriesNames,
+                    newsId: widget.newsItem['id'],
+                  ),
+            ),
+          );
+        },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           margin: const EdgeInsets.all(8),
           padding: const EdgeInsets.all(8),
           constraints: const BoxConstraints(
             maxWidth: 352,
-            minHeight: 272,
-            maxHeight: 272,
+            minHeight: 280,
+            maxHeight: 280,
           ),
           transform: _hovering ? Matrix4.translationValues(0, -5, 0) : null,
           decoration: BoxDecoration(
@@ -100,7 +113,7 @@ class _NewsCardState extends State<NewsCard> {
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
                                           color: Colors.grey[700],
-                                          fontSize: 14,
+                                          fontSize: 20,
                                         ),
                                       ),
                                     ],
@@ -129,7 +142,7 @@ class _NewsCardState extends State<NewsCard> {
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: Colors.grey[700],
-                                    fontSize: 14,
+                                    fontSize: 20,
                                   ),
                                 ),
                               ],
@@ -143,7 +156,7 @@ class _NewsCardState extends State<NewsCard> {
                   title ?? '',
                   style: const TextStyle(
                     color: Color(0xFF141414),
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                   maxLines: 2,
