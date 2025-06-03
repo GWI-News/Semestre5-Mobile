@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:semestre5_mobile/widgets/header.dart';
 import 'package:semestre5_mobile/widgets/navbar.dart';
 import 'package:semestre5_mobile/widgets/news_card.dart';
+import 'package:semestre5_mobile/widgets/news_search_bar.dart'; // Corrigido: nome correto do widget
 import 'package:semestre5_mobile/context/firestore_db_context.dart';
 
 class NewsDashboardPage extends StatefulWidget {
@@ -43,42 +44,54 @@ class _NewsDashboardPageState extends State<NewsDashboardPage> {
                 left: 8,
                 right: 8,
               ),
-              child: FutureBuilder<List<Map<String, dynamic>>>(
-                future: _newsFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) {
-                    return Center(child: Text('Erro ao carregar notícias'));
-                  }
-                  final newsList = snapshot.data ?? [];
-                  if (newsList.isEmpty) {
-                    return const Center(
-                      child: Text('Nenhuma notícia encontrada.'),
-                    );
-                  }
-                  return SingleChildScrollView(
-                    child: Wrap(
-                      alignment: WrapAlignment.center,
-                      children:
-                          newsList.map((newsItem) {
-                            return NewsCard(
-                              newsItem: {
-                                ...newsItem,
-                                'url_image': newsItem['url_image'],
-                                'alt_image': newsItem['alt_image'],
-                                'title': newsItem['title'],
-                              },
-                              categoryName: newsItem['category'] ?? '',
-                              subcategoriesNames:
-                                  newsItem['subcategories'] ?? '',
-                              onTap: () {},
+              child: SingleChildScrollView(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1200),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const NewsSearchBar(), // Corrigido: nome correto do widget
+                        const SizedBox(height: 8),
+                        FutureBuilder<List<Map<String, dynamic>>>(
+                          future: _newsFuture,
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return const Center(child: CircularProgressIndicator());
+                            }
+                            if (snapshot.hasError) {
+                              return Center(child: Text('Erro ao carregar notícias'));
+                            }
+                            final newsList = snapshot.data ?? [];
+                            if (newsList.isEmpty) {
+                              return const Center(
+                                child: Text('Nenhuma notícia encontrada.'),
+                              );
+                            }
+                            return Wrap(
+                              alignment: WrapAlignment.center,
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: newsList.map((newsItem) {
+                                return NewsCard(
+                                  newsItem: {
+                                    ...newsItem,
+                                    'url_image': newsItem['url_image'],
+                                    'alt_image': newsItem['alt_image'],
+                                    'title': newsItem['title'],
+                                  },
+                                  categoryName: newsItem['category'] ?? '',
+                                  subcategoriesNames: newsItem['subcategories'] ?? '',
+                                  onTap: () {},
+                                );
+                              }).toList(),
                             );
-                          }).toList(),
+                          },
+                        ),
+                      ],
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
             ),
           ),
