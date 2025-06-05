@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:semestre5_mobile/widgets/header.dart';
 import 'package:semestre5_mobile/widgets/navbar.dart';
 import 'package:semestre5_mobile/widgets/news_card.dart';
 import 'package:semestre5_mobile/widgets/news_search_bar.dart';
-import 'package:semestre5_mobile/widgets/news_filter.dart'; // Adicione esta linha
-import 'package:semestre5_mobile/context/firestore_db_context.dart';
+import 'package:semestre5_mobile/widgets/news_filter.dart';
+import 'package:semestre5_mobile/widgets/news_carousel.dart';
 
 class NewsDashboardPage extends StatefulWidget {
   const NewsDashboardPage({super.key});
@@ -20,7 +21,21 @@ class _NewsDashboardPageState extends State<NewsDashboardPage> {
   @override
   void initState() {
     super.initState();
-    _newsFuture = FirestoreDbContext().fetchAllNews();
+    _newsFuture = fetchAllNews();
+  }
+
+  Future<List<Map<String, dynamic>>> fetchAllNews() async {
+    final querySnapshot =
+        await FirebaseFirestore.instance
+            .collection('News')
+            .orderBy('publication_date', descending: true)
+            .get();
+    return querySnapshot.docs.map((doc) {
+      final data = doc.data();
+      final map = Map<String, dynamic>.from(data);
+      map['id'] = doc.id;
+      return map;
+    }).toList();
   }
 
   @override
@@ -76,25 +91,34 @@ class _NewsDashboardPageState extends State<NewsDashboardPage> {
                                 child: Text('Nenhuma notícia encontrada.'),
                               );
                             }
-                            return Wrap(
-                              alignment: WrapAlignment.center,
-                              spacing: 8,
-                              runSpacing: 8,
-                              children:
-                                  newsList.map((newsItem) {
-                                    return NewsCard(
-                                      newsItem: {
-                                        ...newsItem,
-                                        'url_image': newsItem['url_image'],
-                                        'alt_image': newsItem['alt_image'],
-                                        'title': newsItem['title'],
-                                      },
-                                      categoryName: newsItem['category'] ?? '',
-                                      subcategoriesNames:
-                                          newsItem['subcategories'] ?? '',
-                                      onTap: () {},
-                                    );
-                                  }).toList(),
+
+                            final carouselItems = newsList.take(5).toList();
+                            final cardItems = newsList.skip(5).toList();
+
+                            return Column(
+                              children: [
+                                // Renderiza o carrossel com as notícias simuladas
+                                NewsCarousel(items: simulatedCarouselNews),
+                                const SizedBox(height: 16),
+                                // Renderiza os cards com as notícias reais do Firestore
+                                if (newsList.isNotEmpty)
+                                  Wrap(
+                                    alignment: WrapAlignment.center,
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children:
+                                        newsList.map((newsItem) {
+                                          return NewsCard(
+                                            newsItem: newsItem,
+                                            categoryName:
+                                                newsItem['category'] ?? '',
+                                            subcategoriesNames:
+                                                newsItem['subcategories'] ?? '',
+                                            onTap: () {},
+                                          );
+                                        }).toList(),
+                                  ),
+                              ],
                             );
                           },
                         ),
@@ -136,3 +160,48 @@ class _NewsDashboardPageState extends State<NewsDashboardPage> {
     );
   }
 }
+
+// Simulação de 5 notícias para o carrossel
+final List<Map<String, dynamic>> simulatedCarouselNews = [
+  {
+    'id': '1',
+    'title': 'Banco do Brasil Anuncia Abertura de Novas Vagas',
+    'url_image':
+        'https://firebasestorage.googleapis.com/v0/b/gwinews-development.appspot.com/o/banco.jpg?alt=media&token=01b0d435-2107-480c-9ee2-ea0f74daffd9',
+    'category': 'Empregos',
+    'subcategories': 'Bancos',
+    'alt_image': 'Imagem do Banco do Brasil',
+  },
+  {
+    'id': '2',
+    'title': 'Caixa Econômica Lança Programa de Estágio',
+    'url_image': 'https://images.unsplash.com/photo-1506744038136-46273834b3fb',
+    'category': 'Educação',
+    'subcategories': 'Estágios',
+    'alt_image': 'Imagem da Caixa Econômica',
+  },
+  {
+    'id': '3',
+    'title': 'Santander Investe em Tecnologia para Atendimento',
+    'url_image': 'https://images.unsplash.com/photo-1464983953574-0892a716854b',
+    'category': 'Tecnologia',
+    'subcategories': 'Bancos',
+    'alt_image': 'Imagem do Santander',
+  },
+  {
+    'id': '4',
+    'title': 'Bradesco Abre Vagas para Jovem Aprendiz',
+    'url_image': 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308',
+    'category': 'Empregos',
+    'subcategories': 'Jovem Aprendiz',
+    'alt_image': 'Imagem do Bradesco',
+  },
+  {
+    'id': '5',
+    'title': 'Itaú Promove Diversidade em Novo Processo Seletivo',
+    'url_image': 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f',
+    'category': 'Diversidade',
+    'subcategories': 'RH',
+    'alt_image': 'Imagem do Itaú',
+  },
+];
