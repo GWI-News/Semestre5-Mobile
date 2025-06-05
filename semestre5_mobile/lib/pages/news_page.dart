@@ -105,7 +105,7 @@ class _NewsPageState extends State<NewsPage> {
     final double headerHeight = height * 0.12;
     final double navbarHeight = width <= 576 ? height * 0.12 : height * 0.12;
 
-    final double topPadding = width > 576 ? headerHeight + 8 : headerHeight + 8;
+    final double topPadding = headerHeight;
     final double bottomPadding = width > 576 ? 8 : navbarHeight;
 
     return Scaffold(

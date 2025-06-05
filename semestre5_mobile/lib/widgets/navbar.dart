@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 class Navbar extends StatelessWidget {
-  const Navbar({super.key});
+  final VoidCallback? onFilterTap; // Adicione esta linha
+
+  const Navbar({super.key, this.onFilterTap}); // Adapte o construtor
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +83,7 @@ class Navbar extends StatelessWidget {
             _NavbarIcon(
               icon: Icons.filter_alt_rounded,
               label: 'Filtro',
-              onTap: () {},
+              onTap: onFilterTap ?? () {}, // Use o callback aqui
               iconSize: iconSize,
               labelFontSize: labelFontSize,
               verticalPadding: itemVerticalPadding,
