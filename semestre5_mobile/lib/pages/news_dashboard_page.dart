@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:semestre5_mobile/widgets/header.dart';
 import 'package:semestre5_mobile/widgets/navbar.dart';
 import 'package:semestre5_mobile/widgets/news_card.dart';
-import 'package:semestre5_mobile/widgets/news_search_bar.dart'; // Corrigido: nome correto do widget
+import 'package:semestre5_mobile/widgets/news_search_bar.dart';
+import 'package:semestre5_mobile/widgets/news_filter.dart'; // Adicione esta linha
 import 'package:semestre5_mobile/context/firestore_db_context.dart';
 
 class NewsDashboardPage extends StatefulWidget {
@@ -14,6 +15,7 @@ class NewsDashboardPage extends StatefulWidget {
 
 class _NewsDashboardPageState extends State<NewsDashboardPage> {
   late Future<List<Map<String, dynamic>>> _newsFuture;
+  bool _showNewsFilter = false;
 
   @override
   void initState() {
@@ -29,13 +31,14 @@ class _NewsDashboardPageState extends State<NewsDashboardPage> {
     final double headerHeight = height * 0.12;
     final double navbarHeight = width <= 576 ? height * 0.10 : height * 0.12;
 
-    final double topPadding = headerHeight + 8;
-    final double bottomPadding = width <= 576 ? navbarHeight + 16 : 0;
+    final double topPadding = headerHeight;
+    final double bottomPadding = width <= 576 ? navbarHeight : 0;
 
     return Scaffold(
       backgroundColor: const Color(0xFFEBEBEB),
       body: Stack(
         children: [
+          // Conteúdo principal
           Positioned.fill(
             child: Padding(
               padding: EdgeInsets.only(
@@ -51,16 +54,21 @@ class _NewsDashboardPageState extends State<NewsDashboardPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const NewsSearchBar(), // Corrigido: nome correto do widget
+                        const NewsSearchBar(),
                         const SizedBox(height: 8),
                         FutureBuilder<List<Map<String, dynamic>>>(
                           future: _newsFuture,
                           builder: (context, snapshot) {
-                            if (snapshot.connectionState == ConnectionState.waiting) {
-                              return const Center(child: CircularProgressIndicator());
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
                             }
                             if (snapshot.hasError) {
-                              return Center(child: Text('Erro ao carregar notícias'));
+                              return Center(
+                                child: Text('Erro ao carregar notícias'),
+                              );
                             }
                             final newsList = snapshot.data ?? [];
                             if (newsList.isEmpty) {
@@ -72,22 +80,25 @@ class _NewsDashboardPageState extends State<NewsDashboardPage> {
                               alignment: WrapAlignment.center,
                               spacing: 8,
                               runSpacing: 8,
-                              children: newsList.map((newsItem) {
-                                return NewsCard(
-                                  newsItem: {
-                                    ...newsItem,
-                                    'url_image': newsItem['url_image'],
-                                    'alt_image': newsItem['alt_image'],
-                                    'title': newsItem['title'],
-                                  },
-                                  categoryName: newsItem['category'] ?? '',
-                                  subcategoriesNames: newsItem['subcategories'] ?? '',
-                                  onTap: () {},
-                                );
-                              }).toList(),
+                              children:
+                                  newsList.map((newsItem) {
+                                    return NewsCard(
+                                      newsItem: {
+                                        ...newsItem,
+                                        'url_image': newsItem['url_image'],
+                                        'alt_image': newsItem['alt_image'],
+                                        'title': newsItem['title'],
+                                      },
+                                      categoryName: newsItem['category'] ?? '',
+                                      subcategoriesNames:
+                                          newsItem['subcategories'] ?? '',
+                                      onTap: () {},
+                                    );
+                                  }).toList(),
                             );
                           },
                         ),
+                        const SizedBox(height: 8),
                       ],
                     ),
                   ),
@@ -95,8 +106,31 @@ class _NewsDashboardPageState extends State<NewsDashboardPage> {
               ),
             ),
           ),
+          // NewsFilter sobre os cards, com z-index elevado
+          if (_showNewsFilter)
+            Positioned(
+              left: 0,
+              right: 0,
+              top: width > 576 ? navbarHeight : null,
+              bottom: width <= 576 ? navbarHeight : null,
+              child: NewsFilter(
+                showOffcanvas: true,
+                onClose: () {
+                  setState(() {
+                    _showNewsFilter = false;
+                  });
+                },
+              ),
+            ),
+          // Passe o callback para o Navbar
+          Navbar(
+            onFilterTap: () {
+              setState(() {
+                _showNewsFilter = true;
+              });
+            },
+          ),
           const Header(),
-          const Navbar(),
         ],
       ),
     );
