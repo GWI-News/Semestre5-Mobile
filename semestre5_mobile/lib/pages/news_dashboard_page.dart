@@ -92,31 +92,32 @@ class _NewsDashboardPageState extends State<NewsDashboardPage> {
                               );
                             }
 
+                            // Separe os 5 primeiros para o carrossel e o restante para os cards
                             final carouselItems = newsList.take(5).toList();
                             final cardItems = newsList.skip(5).toList();
 
                             return Column(
                               children: [
-                                // Renderiza o carrossel com as notícias simuladas
-                                NewsCarousel(items: simulatedCarouselNews),
+                                // Renderiza o carrossel com os 5 primeiros documentos do Firestore
+                                if (carouselItems.isNotEmpty)
+                                  NewsCarousel(items: carouselItems),
                                 const SizedBox(height: 16),
-                                // Renderiza os cards com as notícias reais do Firestore
-                                if (newsList.isNotEmpty)
+                                // Renderiza os cards com os demais documentos do Firestore
+                                if (cardItems.isNotEmpty)
                                   Wrap(
                                     alignment: WrapAlignment.center,
                                     spacing: 8,
                                     runSpacing: 8,
-                                    children:
-                                        newsList.map((newsItem) {
-                                          return NewsCard(
-                                            newsItem: newsItem,
-                                            categoryName:
-                                                newsItem['category'] ?? '',
-                                            subcategoriesNames:
-                                                newsItem['subcategories'] ?? '',
-                                            onTap: () {},
-                                          );
-                                        }).toList(),
+                                    children: cardItems.map((newsItem) {
+                                      return NewsCard(
+                                        newsItem: newsItem,
+                                        categoryName:
+                                            newsItem['category'] ?? '',
+                                        subcategoriesNames:
+                                            newsItem['subcategories'] ?? '',
+                                        onTap: () {},
+                                      );
+                                    }).toList(),
                                   ),
                               ],
                             );

@@ -80,7 +80,7 @@ class _NewsSearchBarState extends State<NewsSearchBar> {
         .orderBy('normalized_title')
         .startAt([normalizedSearchTerm])
         .endAt(['$normalizedSearchTerm\uf8ff'])
-        .limit(10);
+        .limit(5);
 
     final snapshot = await query.get();
     final newsList =
@@ -190,10 +190,12 @@ class _NewsSearchBarState extends State<NewsSearchBar> {
                       controller: _controller,
                       focusNode: _focusNode,
                       autofocus: true,
+                      maxLength: 75, // Limite de 75 caracteres
                       decoration: const InputDecoration(
                         hintText: 'Busque por Notícias...',
                         border: InputBorder.none,
                         isDense: true,
+                        counterText: '', // Esconde o contador de caracteres
                       ),
                       style: const TextStyle(fontSize: 18),
                     ),

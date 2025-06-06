@@ -232,10 +232,10 @@ class _NewsFilterState extends State<NewsFilter> {
     final double navbarWidth =
         width <= 576 ? width : (width <= 992 ? width * 0.6 : width * 0.4);
 
-    // O filtro ocupa 90% da largura da navbar
-    final double filterWidth = navbarWidth * 0.9;
-    // O filtro fica centralizado em relação à navbar
+    // --- ALTERAÇÃO: filtro ocupa 50% da largura da página em telas > 576px ---
+    final double filterWidth = width > 576 ? width * 0.75 : navbarWidth * 0.9;
     final double filterLeft = (width - filterWidth) / 2;
+    // ------------------------------------------------------------------------
 
     // Espaço ocupado por header e navbar
     final double headerHeight = height * 0.12;
@@ -357,48 +357,51 @@ class _NewsFilterState extends State<NewsFilter> {
                   children: [
                     ..._displayedCategories.map((cat) {
                       final selected = _selectedCategories.contains(cat['id']);
-                      return GestureDetector(
-                        onTap: () => _toggleCategory(cat['id']),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color:
-                                selected
-                                    ? const Color(0xFF1D4988)
-                                    : const Color(0xFFF9F9F9),
-                            border: Border.all(
-                              color: const Color(0xFF1D4988),
-                              width: 1.5,
+                      return MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: GestureDetector(
+                          onTap: () => _toggleCategory(cat['id']),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                              horizontal: 12,
                             ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                capitalize(cat['name'] ?? ''),
-                                style: TextStyle(
-                                  color:
-                                      selected
-                                          ? Colors.white
-                                          : const Color(0xFF1D4988),
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 16,
-                                ),
+                            decoration: BoxDecoration(
+                              color:
+                                  selected
+                                      ? const Color(0xFF1D4988)
+                                      : const Color(0xFFF9F9F9),
+                              border: Border.all(
+                                color: const Color(0xFF1D4988),
+                                width: 1.5,
                               ),
-                              if (selected)
-                                const Padding(
-                                  padding: EdgeInsets.only(left: 6),
-                                  child: Icon(
-                                    Icons.check,
-                                    color: Colors.white,
-                                    size: 18,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  capitalize(cat['name'] ?? ''),
+                                  style: TextStyle(
+                                    color:
+                                        selected
+                                            ? Colors.white
+                                            : const Color(0xFF1D4988),
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 16,
                                   ),
                                 ),
-                            ],
+                                if (selected)
+                                  const Padding(
+                                    padding: EdgeInsets.only(left: 6),
+                                    child: Icon(
+                                      Icons.check,
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                       );
@@ -465,48 +468,51 @@ class _NewsFilterState extends State<NewsFilter> {
                       final selected = _selectedSubcategories.contains(
                         sub['id'],
                       );
-                      return GestureDetector(
-                        onTap: () => _toggleSubcategory(sub['id']),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color:
-                                selected
-                                    ? const Color(0xFF1D4988)
-                                    : const Color(0xFFF9F9F9),
-                            border: Border.all(
-                              color: const Color(0xFF1D4988),
-                              width: 1.5,
+                      return MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: GestureDetector(
+                          onTap: () => _toggleSubcategory(sub['id']),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                              horizontal: 12,
                             ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                capitalize(sub['name'] ?? ''),
-                                style: TextStyle(
-                                  color:
-                                      selected
-                                          ? Colors.white
-                                          : const Color(0xFF1D4988),
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 16,
-                                ),
+                            decoration: BoxDecoration(
+                              color:
+                                  selected
+                                      ? const Color(0xFF1D4988)
+                                      : const Color(0xFFF9F9F9),
+                              border: Border.all(
+                                color: const Color(0xFF1D4988),
+                                width: 1.5,
                               ),
-                              if (selected)
-                                const Padding(
-                                  padding: EdgeInsets.only(left: 6),
-                                  child: Icon(
-                                    Icons.check,
-                                    color: Colors.white,
-                                    size: 18,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  capitalize(sub['name'] ?? ''),
+                                  style: TextStyle(
+                                    color:
+                                        selected
+                                            ? Colors.white
+                                            : const Color(0xFF1D4988),
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 16,
                                   ),
                                 ),
-                            ],
+                                if (selected)
+                                  const Padding(
+                                    padding: EdgeInsets.only(left: 6),
+                                    child: Icon(
+                                      Icons.check,
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                       );
@@ -594,6 +600,24 @@ class _NewsFilterState extends State<NewsFilter> {
                       categoryName: '',
                       subcategoriesNames: '',
                       onTap: null,
+                    ),
+                  ),
+                ),
+              if (!_loadingNews &&
+                  _filteredNews.isEmpty &&
+                  (_selectedCategories.isNotEmpty ||
+                      _selectedSubcategories.isNotEmpty))
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Center(
+                    child: Text(
+                      'Nenhuma notícia encontrada para as categorias e/ou subcategorias selecionadas.',
+                      style: TextStyle(
+                        color: Color(0xFF1D4988),
+                        fontWeight: FontWeight.w500,
+                        fontSize: 16,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
                 ),
