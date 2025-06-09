@@ -58,6 +58,16 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
   assets:
+    - assets/art_economia.svg
+    - assets/art_educacao.svg
+    - assets/art_empregos.svg
+    - assets/art_entretenimento.svg
+    - assets/art_esportes.svg
+    - assets/carlos.jpg
+    - assets/donizeti.jpg
+    - assets/gabriel.jpg
+    - assets/lucas.jpg
+    - assets/sophia.jpg
     - assets/GwiNewsLogo.svg
 
   # The following line ensures that the Material Icons font is
