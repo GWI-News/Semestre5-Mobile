@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:semestre5_mobile/pages/news_dashboard_page.dart';
+import 'package:semestre5_mobile/pages/about_us_page.dart'; // Adicione este import
 import 'firebase_options.dart';
 
 void main() async {
@@ -21,6 +22,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => const NewsDashboardPage(),
         '/home': (context) => const NewsDashboardPage(),
+        '/about': (context) => const AboutUsPage(), // Adicione esta linha
       },
     );
   }
