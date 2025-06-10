@@ -6,6 +6,7 @@ import 'package:semestre5_mobile/widgets/news_card.dart';
 import 'package:semestre5_mobile/widgets/news_search_bar.dart';
 import 'package:semestre5_mobile/widgets/news_filter.dart';
 import 'package:semestre5_mobile/widgets/news_carousel.dart';
+import 'package:semestre5_mobile/widgets/navbar_user_utilities.dart';
 
 class NewsDashboardPage extends StatefulWidget {
   const NewsDashboardPage({super.key});
@@ -17,6 +18,7 @@ class NewsDashboardPage extends StatefulWidget {
 class _NewsDashboardPageState extends State<NewsDashboardPage> {
   late Future<List<Map<String, dynamic>>> _newsFuture;
   bool _showNewsFilter = false;
+  bool _showUserUtilities = false; // Novo controlador
 
   @override
   void initState() {
@@ -108,16 +110,17 @@ class _NewsDashboardPageState extends State<NewsDashboardPage> {
                                     alignment: WrapAlignment.center,
                                     spacing: 8,
                                     runSpacing: 8,
-                                    children: cardItems.map((newsItem) {
-                                      return NewsCard(
-                                        newsItem: newsItem,
-                                        categoryName:
-                                            newsItem['category'] ?? '',
-                                        subcategoriesNames:
-                                            newsItem['subcategories'] ?? '',
-                                        onTap: () {},
-                                      );
-                                    }).toList(),
+                                    children:
+                                        cardItems.map((newsItem) {
+                                          return NewsCard(
+                                            newsItem: newsItem,
+                                            categoryName:
+                                                newsItem['category'] ?? '',
+                                            subcategoriesNames:
+                                                newsItem['subcategories'] ?? '',
+                                            onTap: () {},
+                                          );
+                                        }).toList(),
                                   ),
                               ],
                             );
@@ -131,7 +134,31 @@ class _NewsDashboardPageState extends State<NewsDashboardPage> {
               ),
             ),
           ),
-          // NewsFilter sobre os cards, com z-index elevado
+          // Shadow fade para NewsFilter
+          if (_showNewsFilter)
+            Positioned.fill(
+              child: IgnorePointer(
+                ignoring: false,
+                child: AnimatedOpacity(
+                  opacity: 1,
+                  duration: const Duration(milliseconds: 150),
+                  child: Container(color: Colors.black.withOpacity(0.35)),
+                ),
+              ),
+            ),
+          // Shadow fade para User Utilities
+          if (_showUserUtilities)
+            Positioned.fill(
+              child: IgnorePointer(
+                ignoring: false,
+                child: AnimatedOpacity(
+                  opacity: 1,
+                  duration: const Duration(milliseconds: 150),
+                  child: Container(color: Colors.black.withOpacity(0.35)),
+                ),
+              ),
+            ),
+          // Offcanvas NewsFilter
           if (_showNewsFilter)
             Positioned(
               left: 0,
@@ -147,11 +174,32 @@ class _NewsDashboardPageState extends State<NewsDashboardPage> {
                 },
               ),
             ),
-          // Passe o callback para o Navbar
+          // Offcanvas User Utilities
+          if (_showUserUtilities)
+            Positioned(
+              left: 0,
+              right: 0,
+              top: width > 576 ? navbarHeight : null,
+              bottom: width <= 576 ? navbarHeight : null,
+              child: NavbarUserUtilities(
+                showOffcanvas: true,
+                onClose: () {
+                  setState(() {
+                    _showUserUtilities = false;
+                  });
+                },
+              ),
+            ),
+          // Navbar e Header sempre interativos
           Navbar(
             onFilterTap: () {
               setState(() {
                 _showNewsFilter = true;
+              });
+            },
+            onUserTap: () {
+              setState(() {
+                _showUserUtilities = true;
               });
             },
           ),
@@ -161,48 +209,3 @@ class _NewsDashboardPageState extends State<NewsDashboardPage> {
     );
   }
 }
-
-// Simulação de 5 notícias para o carrossel
-final List<Map<String, dynamic>> simulatedCarouselNews = [
-  {
-    'id': '1',
-    'title': 'Banco do Brasil Anuncia Abertura de Novas Vagas',
-    'url_image':
-        'https://firebasestorage.googleapis.com/v0/b/gwinews-development.appspot.com/o/banco.jpg?alt=media&token=01b0d435-2107-480c-9ee2-ea0f74daffd9',
-    'category': 'Empregos',
-    'subcategories': 'Bancos',
-    'alt_image': 'Imagem do Banco do Brasil',
-  },
-  {
-    'id': '2',
-    'title': 'Caixa Econômica Lança Programa de Estágio',
-    'url_image': 'https://images.unsplash.com/photo-1506744038136-46273834b3fb',
-    'category': 'Educação',
-    'subcategories': 'Estágios',
-    'alt_image': 'Imagem da Caixa Econômica',
-  },
-  {
-    'id': '3',
-    'title': 'Santander Investe em Tecnologia para Atendimento',
-    'url_image': 'https://images.unsplash.com/photo-1464983953574-0892a716854b',
-    'category': 'Tecnologia',
-    'subcategories': 'Bancos',
-    'alt_image': 'Imagem do Santander',
-  },
-  {
-    'id': '4',
-    'title': 'Bradesco Abre Vagas para Jovem Aprendiz',
-    'url_image': 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308',
-    'category': 'Empregos',
-    'subcategories': 'Jovem Aprendiz',
-    'alt_image': 'Imagem do Bradesco',
-  },
-  {
-    'id': '5',
-    'title': 'Itaú Promove Diversidade em Novo Processo Seletivo',
-    'url_image': 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f',
-    'category': 'Diversidade',
-    'subcategories': 'RH',
-    'alt_image': 'Imagem do Itaú',
-  },
-];

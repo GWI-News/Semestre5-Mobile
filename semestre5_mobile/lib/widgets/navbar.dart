@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class Navbar extends StatelessWidget {
-  final VoidCallback? onFilterTap; // Adicione esta linha
+  final VoidCallback? onFilterTap;
+  final VoidCallback? onUserTap;
 
-  const Navbar({super.key, this.onFilterTap}); // Adapte o construtor
+  const Navbar({super.key, this.onFilterTap, this.onUserTap});
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +85,7 @@ class Navbar extends StatelessWidget {
             _NavbarIcon(
               icon: Icons.filter_alt_rounded,
               label: 'Filtro',
-              onTap: onFilterTap ?? () {}, // Use o callback aqui
+              onTap: onFilterTap ?? () {},
               iconSize: iconSize,
               labelFontSize: labelFontSize,
               verticalPadding: itemVerticalPadding,
@@ -101,7 +103,16 @@ class Navbar extends StatelessWidget {
             _NavbarIcon(
               icon: Icons.person_rounded,
               label: 'Perfil',
-              onTap: () {},
+              onTap: () {
+                final user = FirebaseAuth.instance.currentUser;
+                if (user != null && user.emailVerified) {
+                  // Usuário autenticado e email verificado: redireciona para perfil
+                  Navigator.of(context).pushReplacementNamed('/perfil/adm');
+                } else {
+                  // Usuário não autenticado: abre o offcanvas de login
+                  if (onUserTap != null) onUserTap!();
+                }
+              },
               iconSize: iconSize,
               labelFontSize: labelFontSize,
               verticalPadding: itemVerticalPadding,
