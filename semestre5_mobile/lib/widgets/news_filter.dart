@@ -37,12 +37,36 @@ class _NewsFilterState extends State<NewsFilter> {
 
   bool _loadingNews = false;
 
+  final ScrollController _scrollController = ScrollController();
+  bool _showScrollDownIndicator = false;
+
   @override
   void initState() {
     super.initState();
     if (widget.showOffcanvas) {
       _fetchCategories();
       _fetchSubcategories();
+    }
+    _scrollController.addListener(_checkScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_checkScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _checkScroll() {
+    // Se não está no final, mostra seta
+    if (!_scrollController.hasClients) return;
+    final max = _scrollController.position.maxScrollExtent;
+    final offset = _scrollController.offset;
+    final show = offset < max - 8; // 8px de tolerância
+    if (_showScrollDownIndicator != show) {
+      setState(() {
+        _showScrollDownIndicator = show;
+      });
     }
   }
 
@@ -241,7 +265,7 @@ class _NewsFilterState extends State<NewsFilter> {
     final double headerHeight = height * 0.12;
     final double navbarHeight = width <= 576 ? height * 0.10 : height * 0.12;
     final double availableHeight = height - headerHeight - navbarHeight;
-    final double maxFilterHeight = availableHeight * 0.9;
+    final double maxFilterHeight = availableHeight * 0.95;
 
     // Defina a cor padrão azul do site
     const Color borderColor = Color(0xFF1D4988);
@@ -275,354 +299,407 @@ class _NewsFilterState extends State<NewsFilter> {
       bottom: width <= 576 ? navbarHeight : null,
       child: Material(
         color: Colors.transparent,
-        child: Container(
-          constraints: BoxConstraints(minHeight: 0, maxHeight: maxFilterHeight),
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: filterBorder, // Borda azul dinâmica
-            borderRadius:
-                width > 576
-                    ? const BorderRadius.only(
-                      bottomLeft: Radius.circular(12),
-                      bottomRight: Radius.circular(12),
-                      topLeft: Radius.circular(0),
-                      topRight: Radius.circular(0),
-                    )
-                    : const BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      topRight: Radius.circular(12),
-                      bottomLeft: Radius.circular(12),
-                      bottomRight: Radius.circular(12),
-                    ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.10),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
+        child: Stack(
+          children: [
+            Container(
+              constraints: BoxConstraints(
+                minHeight: 0,
+                maxHeight: maxFilterHeight,
               ),
-            ],
-          ),
-          child: ListView(
-            shrinkWrap: true,
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: [
-              // Título e botão de fechar
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.only(left: 8.0),
-                    child: Text(
-                      'Filtro',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1D4988),
-                      ),
-                    ),
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: const Color(0xFF1D4988),
-                        width: 1.5,
-                      ),
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.close, color: Color(0xFF1D4988)),
-                      onPressed: widget.onClose,
-                      tooltip: 'Fechar filtro',
-                    ),
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: filterBorder,
+                borderRadius:
+                    width > 576
+                        ? const BorderRadius.only(
+                          bottomLeft: Radius.circular(12),
+                          bottomRight: Radius.circular(12),
+                          topLeft: Radius.circular(0),
+                          topRight: Radius.circular(0),
+                        )
+                        : const BorderRadius.only(
+                          topLeft: Radius.circular(12),
+                          topRight: Radius.circular(12),
+                          bottomLeft: Radius.circular(12),
+                          bottomRight: Radius.circular(12),
+                        ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.10),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'Categorias mais acessadas',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1D4988),
-                ),
-              ),
-              const SizedBox(height: 16),
-              if (_loadingCategories)
-                const Center(child: CircularProgressIndicator())
-              else ...[
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    ..._displayedCategories.map((cat) {
-                      final selected = _selectedCategories.contains(cat['id']);
-                      return MouseRegion(
-                        cursor: SystemMouseCursors.click,
-                        child: GestureDetector(
-                          onTap: () => _toggleCategory(cat['id']),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                              horizontal: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color:
-                                  selected
-                                      ? const Color(0xFF1D4988)
-                                      : const Color(0xFFF9F9F9),
-                              border: Border.all(
-                                color: const Color(0xFF1D4988),
-                                width: 1.5,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  capitalize(cat['name'] ?? ''),
-                                  style: TextStyle(
-                                    color:
-                                        selected
-                                            ? Colors.white
-                                            : const Color(0xFF1D4988),
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                if (selected)
-                                  const Padding(
-                                    padding: EdgeInsets.only(left: 6),
-                                    child: Icon(
-                                      Icons.check,
-                                      color: Colors.white,
-                                      size: 18,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                    if (_displayedCategories.length <
-                            _categories.length + _remainingCategories.length &&
-                        _remainingCategories.length >
-                            (_currentPage - 1) * _pageSize)
-                      GestureDetector(
-                        onTap: _showNextCategories,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF9F9F9),
-                            border: Border.all(
-                              color: const Color(0xFF1D4988),
-                              width: 1.5,
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.more_horiz, color: Color(0xFF1D4988)),
-                              SizedBox(width: 8),
-                              Text(
-                                'Mais categorias',
-                                style: TextStyle(
-                                  color: Color(0xFF1D4988),
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
+              child: ListView(
+                controller: _scrollController,
+                shrinkWrap: true,
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  // Título e botão de fechar
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.only(left: 8.0),
+                        child: Text(
+                          'Filtro',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1D4988),
                           ),
                         ),
                       ),
-                  ],
-                ),
-              ],
-              const SizedBox(height: 24),
-
-              // --- Subcategorias ---
-              const Text(
-                'Subcategorias mais acessadas',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1D4988),
-                ),
-              ),
-              const SizedBox(height: 16),
-              if (_loadingSubcategories)
-                const Center(child: CircularProgressIndicator())
-              else ...[
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    ..._displayedSubcategories.map((sub) {
-                      final selected = _selectedSubcategories.contains(
-                        sub['id'],
-                      );
-                      return MouseRegion(
-                        cursor: SystemMouseCursors.click,
-                        child: GestureDetector(
-                          onTap: () => _toggleSubcategory(sub['id']),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                              horizontal: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color:
-                                  selected
-                                      ? const Color(0xFF1D4988)
-                                      : const Color(0xFFF9F9F9),
-                              border: Border.all(
-                                color: const Color(0xFF1D4988),
-                                width: 1.5,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  capitalize(sub['name'] ?? ''),
-                                  style: TextStyle(
-                                    color:
-                                        selected
-                                            ? Colors.white
-                                            : const Color(0xFF1D4988),
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                if (selected)
-                                  const Padding(
-                                    padding: EdgeInsets.only(left: 6),
-                                    child: Icon(
-                                      Icons.check,
-                                      color: Colors.white,
-                                      size: 18,
-                                    ),
-                                  ),
-                              ],
-                            ),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: const Color(0xFF1D4988),
+                            width: 1.5,
                           ),
+                          shape: BoxShape.circle,
                         ),
-                      );
-                    }).toList(),
-                    if (_displayedSubcategories.length <
-                            _subcategories.length +
-                                _remainingSubcategories.length &&
-                        _remainingSubcategories.length >
-                            (_currentSubPage - 1) * _pageSize)
-                      GestureDetector(
-                        onTap: _showNextSubcategories,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 12,
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.close,
+                            color: Color(0xFF1D4988),
                           ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF9F9F9),
-                            border: Border.all(
-                              color: const Color(0xFF1D4988),
-                              width: 1.5,
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.more_horiz, color: Color(0xFF1D4988)),
-                              SizedBox(width: 8),
-                              Text(
-                                'Mais subcategorias',
-                                style: TextStyle(
-                                  color: Color(0xFF1D4988),
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
-                          ),
+                          onPressed: widget.onClose,
+                          tooltip: 'Fechar filtro',
                         ),
                       ),
-                  ],
-                ),
-              ],
-              const SizedBox(height: 16),
-
-              // --- Fim Subcategorias ---
-              ElevatedButton(
-                onPressed:
-                    (_selectedCategories.isEmpty &&
-                                _selectedSubcategories.isEmpty) ||
-                            _loadingNews
-                        ? null
-                        : _filterNews,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1D4988),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    ],
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 14,
-                    horizontal: 24,
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Categorias mais acessadas',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1D4988),
+                    ),
                   ),
-                ),
-                child:
-                    _loadingNews
-                        ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                  const SizedBox(height: 16),
+                  if (_loadingCategories)
+                    const Center(child: CircularProgressIndicator())
+                  else ...[
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ..._displayedCategories.map((cat) {
+                          final selected = _selectedCategories.contains(
+                            cat['id'],
+                          );
+                          return MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: GestureDetector(
+                              onTap: () => _toggleCategory(cat['id']),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                  horizontal: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      selected
+                                          ? const Color(0xFF1D4988)
+                                          : const Color(0xFFF9F9F9),
+                                  border: Border.all(
+                                    color: const Color(0xFF1D4988),
+                                    width: 1.5,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      capitalize(cat['name'] ?? ''),
+                                      style: TextStyle(
+                                        color:
+                                            selected
+                                                ? Colors.white
+                                                : const Color(0xFF1D4988),
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    if (selected)
+                                      const Padding(
+                                        padding: EdgeInsets.only(left: 6),
+                                        child: Icon(
+                                          Icons.check,
+                                          color: Colors.white,
+                                          size: 18,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        if (_displayedCategories.length <
+                                _categories.length +
+                                    _remainingCategories.length &&
+                            _remainingCategories.length >
+                                (_currentPage - 1) * _pageSize)
+                          GestureDetector(
+                            onTap: _showNextCategories,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                                horizontal: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF9F9F9),
+                                border: Border.all(
+                                  color: const Color(0xFF1D4988),
+                                  width: 1.5,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Icon(
+                                    Icons.more_horiz,
+                                    color: Color(0xFF1D4988),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Mais categorias',
+                                    style: TextStyle(
+                                      color: Color(0xFF1D4988),
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                        )
-                        : const Text('Filtrar', style: TextStyle(fontSize: 16)),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+
+                  // --- Subcategorias ---
+                  const Text(
+                    'Subcategorias mais acessadas',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1D4988),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (_loadingSubcategories)
+                    const Center(child: CircularProgressIndicator())
+                  else ...[
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ..._displayedSubcategories.map((sub) {
+                          final selected = _selectedSubcategories.contains(
+                            sub['id'],
+                          );
+                          return MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: GestureDetector(
+                              onTap: () => _toggleSubcategory(sub['id']),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                  horizontal: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      selected
+                                          ? const Color(0xFF1D4988)
+                                          : const Color(0xFFF9F9F9),
+                                  border: Border.all(
+                                    color: const Color(0xFF1D4988),
+                                    width: 1.5,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      capitalize(sub['name'] ?? ''),
+                                      style: TextStyle(
+                                        color:
+                                            selected
+                                                ? Colors.white
+                                                : const Color(0xFF1D4988),
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    if (selected)
+                                      const Padding(
+                                        padding: EdgeInsets.only(left: 6),
+                                        child: Icon(
+                                          Icons.check,
+                                          color: Colors.white,
+                                          size: 18,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        if (_displayedSubcategories.length <
+                                _subcategories.length +
+                                    _remainingSubcategories.length &&
+                            _remainingSubcategories.length >
+                                (_currentSubPage - 1) * _pageSize)
+                          GestureDetector(
+                            onTap: _showNextSubcategories,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                                horizontal: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF9F9F9),
+                                border: Border.all(
+                                  color: const Color(0xFF1D4988),
+                                  width: 1.5,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Icon(
+                                    Icons.more_horiz,
+                                    color: Color(0xFF1D4988),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Mais subcategorias',
+                                    style: TextStyle(
+                                      color: Color(0xFF1D4988),
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+
+                  // --- Fim Subcategorias ---
+                  ElevatedButton(
+                    onPressed:
+                        (_selectedCategories.isEmpty &&
+                                    _selectedSubcategories.isEmpty) ||
+                                _loadingNews
+                            ? null
+                            : _filterNews,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1D4988),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 24,
+                      ),
+                    ),
+                    child:
+                        _loadingNews
+                            ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                            : const Text(
+                              'Filtrar',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (_filteredNews.isNotEmpty)
+                    ..._filteredNews.map(
+                      (newsItem) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: NewsCard(
+                          newsItem: newsItem,
+                          categoryName: '',
+                          subcategoriesNames: '',
+                          onTap: null,
+                        ),
+                      ),
+                    ),
+                  if (!_loadingNews &&
+                      _filteredNews.isEmpty &&
+                      (_selectedCategories.isNotEmpty ||
+                          _selectedSubcategories.isNotEmpty))
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Center(
+                        child: Text(
+                          'Nenhuma notícia encontrada para as categorias e/ou subcategorias selecionadas.',
+                          style: TextStyle(
+                            color: Color(0xFF1D4988),
+                            fontWeight: FontWeight.w500,
+                            fontSize: 16,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
               ),
-              const SizedBox(height: 16),
-              if (_filteredNews.isNotEmpty)
-                ..._filteredNews.map(
-                  (newsItem) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: NewsCard(
-                      newsItem: newsItem,
-                      categoryName: '',
-                      subcategoriesNames: '',
-                      onTap: null,
+            ),
+            // Seta para baixo quando há conteúdo para rolar
+            if (_showScrollDownIndicator)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 8,
+                child: Center(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.85),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 2,
+                      horizontal: 8,
+                    ),
+                    child: const Icon(
+                      Icons.keyboard_arrow_down,
+                      color: Color(0xFF1D4988),
+                      size: 32,
                     ),
                   ),
                 ),
-              if (!_loadingNews &&
-                  _filteredNews.isEmpty &&
-                  (_selectedCategories.isNotEmpty ||
-                      _selectedSubcategories.isNotEmpty))
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Center(
-                    child: Text(
-                      'Nenhuma notícia encontrada para as categorias e/ou subcategorias selecionadas.',
-                      style: TextStyle(
-                        color: Color(0xFF1D4988),
-                        fontWeight: FontWeight.w500,
-                        fontSize: 16,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
