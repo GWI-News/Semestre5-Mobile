@@ -88,13 +88,19 @@ class _AboutUsPageState extends State<AboutUsPage> {
                             Text('FAQ', style: h1Style),
                             GestureDetector(
                               onTap: () {
-                                Navigator.pushNamed(context, '/Faq');
+                                Navigator.pushNamed(
+                                  context,
+                                  '/faq', // Rota para a página de FAQ
+                                );
                               },
-                              child: Text(
-                                'Clique Aqui para Acessar nosso Faq!',
-                                style: h2Style.copyWith(
-                                  decoration: TextDecoration.underline,
-                                  color: const Color(0xFF1D4988),
+                              child: MouseRegion(
+                                cursor: SystemMouseCursors.click,
+                                child: Text(
+                                  'Clique Aqui para Acessar nosso Faq!',
+                                  style: h2Style.copyWith(
+                                    decoration: TextDecoration.underline,
+                                    color: const Color(0xFF1D4988),
+                                  ),
                                 ),
                               ),
                             ),
@@ -170,20 +176,6 @@ class _AboutUsPageState extends State<AboutUsPage> {
                           children: [
                             Text('Nossa Equipe', style: h1Style),
                             const SizedBox(height: 12),
-                            _TeamMember(
-                              name: 'Carlos Ramos - Desenvolvedor FrontEnd',
-                              imagePath: 'assets/carlos.jpg',
-                              imageWidth: image2Width,
-                              description:
-                                  'Tenho 19 anos, e atualmente estou cursando faculdade de desenvolvimento de software.',
-                              email: 'botelhoramos01@gmail.com',
-                              linkedin:
-                                  'https://www.linkedin.com/in/carlos-eduardo-ramos-422985265?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app',
-                              github: 'https://github.com/carloosramos',
-                              pStyle: pStyle,
-                              h2Style: h2Style,
-                              linkStyle: linkStyle,
-                            ),
                             _TeamMember(
                               name: 'Gabriel Fecchio - Arquiteto de Software',
                               imagePath: 'assets/gabriel.jpg',
