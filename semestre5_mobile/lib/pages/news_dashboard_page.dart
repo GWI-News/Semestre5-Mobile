@@ -170,6 +170,7 @@ class _NewsDashboardPageState extends State<NewsDashboardPage> {
                 onClose: () {
                   setState(() {
                     _showNewsFilter = false;
+                    // _showUserUtilities permanece como está
                   });
                 },
               ),
@@ -186,6 +187,7 @@ class _NewsDashboardPageState extends State<NewsDashboardPage> {
                 onClose: () {
                   setState(() {
                     _showUserUtilities = false;
+                    // _showNewsFilter permanece como está
                   });
                 },
               ),
@@ -195,11 +197,13 @@ class _NewsDashboardPageState extends State<NewsDashboardPage> {
             onFilterTap: () {
               setState(() {
                 _showNewsFilter = true;
+                _showUserUtilities = false; // Fecha o outro offcanvas
               });
             },
             onUserTap: () {
               setState(() {
                 _showUserUtilities = true;
+                _showNewsFilter = false; // Fecha o outro offcanvas
               });
             },
           ),

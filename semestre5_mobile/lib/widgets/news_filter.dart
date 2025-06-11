@@ -36,6 +36,8 @@ class _NewsFilterState extends State<NewsFilter> {
   // --------------------------
 
   bool _loadingNews = false;
+  bool _filterApplied =
+      false; // Adicione este campo na sua classe _NewsFilterState
 
   final ScrollController _scrollController = ScrollController();
   bool _showScrollDownIndicator = false;
@@ -173,18 +175,19 @@ class _NewsFilterState extends State<NewsFilter> {
     });
   }
 
+  // Altere o método _filterNews para marcar quando o filtro foi aplicado:
   Future<void> _filterNews() async {
     if (_selectedCategories.isEmpty && _selectedSubcategories.isEmpty) return;
     setState(() {
       _loadingNews = true;
       _filteredNews = [];
+      _filterApplied = true; // Marca que o filtro foi aplicado
     });
 
     Query query = FirebaseFirestore.instance.collection('News');
     if (_selectedCategories.isNotEmpty) {
       query = query.where('news_category_id', whereIn: _selectedCategories);
     }
-    // Adaptação para array de subcategorias
     if (_selectedSubcategories.isNotEmpty) {
       query = query.where(
         'news_subcategory_ids',
@@ -229,6 +232,7 @@ class _NewsFilterState extends State<NewsFilter> {
         _selectedSubcategories = [];
         _displayedSubcategories = [];
         _currentSubPage = 0;
+        _filterApplied = false; // Reseta ao fechar
       });
     }
   }
@@ -611,70 +615,82 @@ class _NewsFilterState extends State<NewsFilter> {
                       const SizedBox(height: 16),
 
                       // --- Fim Subcategorias ---
-                      ElevatedButton(
-                        onPressed:
-                            (_selectedCategories.isEmpty &&
-                                        _selectedSubcategories.isEmpty) ||
-                                    _loadingNews
-                                ? null
-                                : _filterNews,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1D4988),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 14,
-                            horizontal: 24,
-                          ),
-                        ),
-                        child:
-                            _loadingNews
-                                ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Flexible(
+                            flex: 3, // 30% do espaço
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed:
+                                    (_selectedCategories.isEmpty &&
+                                                _selectedSubcategories
+                                                    .isEmpty) ||
+                                            _loadingNews
+                                        ? null
+                                        : _filterNews,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF1D4988),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
-                                )
-                                : const Text(
-                                  'Filtrar',
-                                  style: TextStyle(fontSize: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  textStyle: const TextStyle(fontSize: 18),
                                 ),
+                                child:
+                                    _loadingNews
+                                        ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                        : const Text('Filtrar'),
+                              ),
+                            ),
+                          ),
+                          // Espaço vazio para completar os 70% restantes (opcional)
+                          Flexible(flex: 7, child: SizedBox()),
+                        ],
                       ),
                       const SizedBox(height: 16),
-                      if (_filteredNews.isNotEmpty)
-                        ..._filteredNews.map(
-                          (newsItem) => Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: NewsCard(
-                              newsItem: newsItem,
-                              categoryName: '',
-                              subcategoriesNames: '',
-                              onTap: null,
-                            ),
-                          ),
-                        ),
-                      if (!_loadingNews &&
-                          _filteredNews.isEmpty &&
-                          (_selectedCategories.isNotEmpty ||
-                              _selectedSubcategories.isNotEmpty))
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                          child: Center(
-                            child: Text(
-                              'Nenhuma notícia encontrada para as categorias e/ou subcategorias selecionadas.',
-                              style: TextStyle(
-                                color: Color(0xFF1D4988),
-                                fontWeight: FontWeight.w500,
-                                fontSize: 16,
+                      if (_filterApplied) ...[
+                        if (_loadingNews)
+                          const Center(child: CircularProgressIndicator())
+                        else if (_filteredNews.isNotEmpty)
+                          ..._filteredNews.map(
+                            (newsItem) => Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: NewsCard(
+                                newsItem: newsItem,
+                                categoryName: '',
+                                subcategoriesNames: '',
+                                onTap: null,
                               ),
-                              textAlign: TextAlign.center,
+                            ),
+                          )
+                        else
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                              child: Text(
+                                'Nenhuma notícia encontrada para as categorias e/ou subcategorias selecionadas.',
+                                style: TextStyle(
+                                  color: Color(0xFF1D4988),
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 16,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
                             ),
                           ),
-                        ),
+                      ],
                     ],
                   ),
                 ),
