@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:semestre5_mobile/widgets/header.dart';
 import 'package:semestre5_mobile/widgets/navbar.dart';
+import 'package:semestre5_mobile/widgets/news_filter.dart';
+import 'package:semestre5_mobile/widgets/navbar_user_utilities.dart';
 
 class NewsPage extends StatefulWidget {
   final String newsCategory;
@@ -22,6 +24,10 @@ class NewsPage extends StatefulWidget {
 class _NewsPageState extends State<NewsPage> {
   Map<String, dynamic>? newsItem;
   bool isLoading = true;
+
+  // Controladores dos offcanvas
+  bool _showNewsFilter = false;
+  bool _showUserUtilities = false;
 
   @override
   void initState() {
@@ -255,8 +261,64 @@ class _NewsPageState extends State<NewsPage> {
               ),
             ),
           ),
+          // Shadow fade para offcanvas
+          if (_showNewsFilter || _showUserUtilities)
+            Positioned.fill(
+              child: IgnorePointer(
+                ignoring: false,
+                child: AnimatedOpacity(
+                  opacity: 1,
+                  duration: const Duration(milliseconds: 150),
+                  child: Container(color: Colors.black.withOpacity(0.35)),
+                ),
+              ),
+            ),
+          // Offcanvas NewsFilter
+          if (_showNewsFilter)
+            Positioned(
+              left: 0,
+              right: 0,
+              top: width > 576 ? navbarHeight : null,
+              bottom: width <= 576 ? navbarHeight : null,
+              child: NewsFilter(
+                showOffcanvas: true,
+                onClose: () {
+                  setState(() {
+                    _showNewsFilter = false;
+                  });
+                },
+              ),
+            ),
+          // Offcanvas User Utilities
+          if (_showUserUtilities)
+            Positioned(
+              left: 0,
+              right: 0,
+              top: width > 576 ? navbarHeight : null,
+              bottom: width <= 576 ? navbarHeight : null,
+              child: NavbarUserUtilities(
+                showOffcanvas: true,
+                onClose: () {
+                  setState(() {
+                    _showUserUtilities = false;
+                  });
+                },
+              ),
+            ),
+          // Navbar e Header sempre interativos
+          Navbar(
+            onFilterTap: () {
+              setState(() {
+                _showNewsFilter = true;
+              });
+            },
+            onUserTap: () {
+              setState(() {
+                _showUserUtilities = true;
+              });
+            },
+          ),
           const Header(),
-          const Navbar(),
         ],
       ),
     );

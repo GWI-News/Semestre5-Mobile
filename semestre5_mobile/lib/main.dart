@@ -4,6 +4,7 @@ import 'package:semestre5_mobile/pages/news_dashboard_page.dart';
 import 'package:semestre5_mobile/pages/about_us_page.dart'; // Adicione este import
 import 'package:semestre5_mobile/pages/faq_page.dart'; // Adicione este import
 import 'package:semestre5_mobile/pages/adm_profile_page.dart'; // Adicione este import
+import 'package:semestre5_mobile/pages/author_profile_page.dart'; // Adicione este import
 import 'firebase_options.dart';
 
 void main() async {
@@ -27,6 +28,7 @@ class MyApp extends StatelessWidget {
         '/about': (context) => const AboutUsPage(), // Adicione esta linha
         '/faq': (context) => const FaqPage(),
         '/perfil/adm': (context) => const AdmProfilePage(),
+        '/perfil/autor': (context) => const AuthorProfilePage(),
       },
     );
   }

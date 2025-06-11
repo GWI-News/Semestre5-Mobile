@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:uuid/uuid.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class NavbarUserUtilities extends StatefulWidget {
   final bool showOffcanvas;
@@ -17,12 +19,22 @@ class NavbarUserUtilities extends StatefulWidget {
 
 class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
   final _formKey = GlobalKey<FormState>();
+  final _registerFormKey = GlobalKey<FormState>();
   String _email = '';
   String _password = '';
   bool _loading = false;
   String? _error;
 
-  // Responsividade
+  // Cadastro
+  bool _showRegister = false;
+  String _registerEmail = '';
+  String _registerPassword = '';
+  String _registerConfirmPassword = '';
+  String _registerName = '';
+  String? _registerError;
+  bool _registerLoading = false;
+
+  // Responsividade e layout (mantém igual)
   double _getOffcanvasWidth(double width) {
     if (width <= 576) return width * 0.9;
     if (width <= 992) return width * 0.6;
@@ -41,14 +53,12 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
       _error = null;
     });
     try {
-      // Realiza o login com email e senha usando Firebase Authentication
       final userCredential = await FirebaseAuth.instance
           .signInWithEmailAndPassword(
             email: _email.trim(),
             password: _password,
           );
 
-      // Verifica se o email está verificado
       if (!userCredential.user!.emailVerified) {
         await FirebaseAuth.instance.signOut();
         setState(() {
@@ -64,6 +74,20 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
         return;
       }
 
+      // Buscar userRole no Firestore
+      final userDoc =
+          await FirebaseFirestore.instance
+              .collection('Users')
+              .where('email', isEqualTo: _email.trim())
+              .limit(1)
+              .get();
+
+      int userRole = 0; // padrão admin
+      if (userDoc.docs.isNotEmpty &&
+          userDoc.docs.first.data().containsKey('userRole')) {
+        userRole = userDoc.docs.first['userRole'] ?? 1;
+      }
+
       setState(() {
         _loading = false;
       });
@@ -76,8 +100,13 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
             backgroundColor: Colors.green,
           ),
         );
-        // Redireciona para a página de perfil do administrador
-        Navigator.of(context).pushReplacementNamed('/perfil/adm');
+        if (userRole == 1) {
+          Navigator.of(context).pushReplacementNamed('/perfil/adm');
+        } else if (userRole == 2) {
+          Navigator.of(context).pushReplacementNamed('/perfil/autor');
+        } else {
+          Navigator.of(context).pushReplacementNamed('/perfil/adm');
+        }
       }
     } on FirebaseAuthException catch (e) {
       String msg = 'Ocorreu um erro, tente novamente.';
@@ -109,6 +138,101 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
     }
   }
 
+  Future<void> _handleRegister() async {
+    if (!_registerFormKey.currentState!.validate()) return;
+    setState(() {
+      _registerLoading = true;
+      _registerError = null;
+    });
+    try {
+      if (_registerPassword != _registerConfirmPassword) {
+        setState(() {
+          _registerError = 'As senhas não conferem.';
+          _registerLoading = false;
+        });
+        return;
+      }
+      // Gera GUID
+      final String guid = const Uuid().v4();
+      // Cria usuário no Firebase Auth
+      final userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: _registerEmail.trim(),
+            password: _registerPassword,
+          );
+      // Atualiza displayName (opcional)
+      await userCredential.user!.updateDisplayName(_registerName.trim());
+      // Cria documento na collection Users
+      await FirebaseFirestore.instance.collection('Users').doc(guid).set({
+        'id': guid,
+        'userRole': 1,
+        'completeName': _registerName.trim(),
+        'email': _registerEmail.trim(),
+        'active': true,
+      });
+      // Envia email de verificação
+      await userCredential.user!.sendEmailVerification();
+
+      setState(() {
+        _registerLoading = false;
+        _showRegister = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Cadastro realizado! Verifique seu e-mail para ativar a conta.',
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      String msg = 'Ocorreu um erro, tente novamente.';
+      if (e.code == 'email-already-in-use') {
+        msg = 'Este e-mail já está em uso.';
+      } else if (e.code == 'invalid-email') {
+        msg = 'E-mail inválido.';
+      } else if (e.code == 'weak-password') {
+        msg = 'A senha é muito fraca.';
+      }
+      setState(() {
+        _registerError = msg;
+        _registerLoading = false;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
+    } catch (_) {
+      setState(() {
+        _registerError = 'Ocorreu um erro, tente novamente.';
+        _registerLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ocorreu um erro, tente novamente.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  String _passwordStrength(String password) {
+    int score = 0;
+    if (password.length >= 8) score++; // mínimo para ser considerada razoável
+    if (password.length >= 12) score++; // mais longa é melhor
+    if (RegExp(r'[A-Z]').hasMatch(password)) score++; // letra maiúscula
+    if (RegExp(r'[a-z]').hasMatch(password)) score++; // letra minúscula
+    if (RegExp(r'[0-9]').hasMatch(password)) score++; // número
+    if (RegExp(
+      r'''[!@#\$&*~%^()_+\-=\[\]{};'"\\:"|,.<>\/?]''',
+    ).hasMatch(password))
+      score++; // caractere especial
+
+    // Corrigido: ajuste os limites para refletir melhor a força
+    if (score <= 2) return 'Fraca';
+    if (score <= 4) return 'Média';
+    return 'Forte';
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!widget.showOffcanvas) return const SizedBox.shrink();
@@ -116,27 +240,22 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
     final width = MediaQuery.of(context).size.width;
     final height = MediaQuery.of(context).size.height;
 
-    // Mesma lógica de largura e posicionamento do NewsFilter
     final double navbarWidth =
         width <= 576 ? width : (width <= 992 ? width * 0.6 : width * 0.4);
     final double offcanvasWidth =
         width > 576 ? width * 0.75 : navbarWidth * 0.9;
     final double offcanvasLeft = (width - offcanvasWidth) / 2;
 
-    // Espaço ocupado por header e navbar
     final double headerHeight = height * 0.12;
     final double navbarHeight = width <= 576 ? height * 0.10 : height * 0.12;
     final double availableHeight = height - headerHeight - navbarHeight;
     final double maxOffcanvasHeight = availableHeight * 0.95;
 
-    // Defina a cor padrão azul do site
     const Color borderColor = Color(0xFF1D4988);
     BorderSide borderSide = const BorderSide(color: borderColor, width: 2);
 
-    // Defina a borda conforme o tamanho da tela (igual ao NewsFilter)
     Border offcanvasBorder;
     if (width > 576) {
-      // Em telas grandes, sem borda superior
       offcanvasBorder = Border(
         left: borderSide,
         right: borderSide,
@@ -144,7 +263,6 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
         top: BorderSide.none,
       );
     } else {
-      // Em telas pequenas, sem borda inferior
       offcanvasBorder = Border(
         left: borderSide,
         right: borderSide,
@@ -170,7 +288,7 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
               maxWidth: offcanvasWidth,
             ),
             child: Container(
-              width: offcanvasWidth, // Garante largura correta desde o início
+              width: offcanvasWidth,
               padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
               decoration: BoxDecoration(
                 color: const Color(0xFFF9F9F9),
@@ -201,15 +319,14 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
                 shrinkWrap: true,
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: [
-                  // Título e botão de fechar
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Padding(
-                        padding: EdgeInsets.only(left: 8.0),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8.0),
                         child: Text(
-                          'Login',
-                          style: TextStyle(
+                          _showRegister ? 'Cadastro' : 'Login',
+                          style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF1D4988),
@@ -236,7 +353,7 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  if (_error != null)
+                  if (!_showRegister && _error != null)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Text(
@@ -249,124 +366,432 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
                         textAlign: TextAlign.center,
                       ),
                     ),
-                  Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        // Email
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: TextFormField(
-                            enabled: !_loading,
-                            keyboardType: TextInputType.emailAddress,
-                            maxLength: 510, // Limite máximo de caracteres
-                            decoration: InputDecoration(
-                              labelText: 'Email',
-                              labelStyle: const TextStyle(
-                                fontSize: 18,
-                                color: Color(0xFF1D4988),
-                                fontWeight: FontWeight.w600,
-                              ),
-                              filled: true,
-                              fillColor: const Color(0xFFEBEBEB),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 12,
-                                horizontal: 12,
-                              ),
-                              counterText:
-                                  '', // Esconde o contador de caracteres
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty)
-                                return 'Digite seu e-mail';
-                              if (value.length < 5)
-                                return 'O e-mail deve ter pelo menos 5 caracteres';
-                              if (value.length > 100)
-                                return 'O e-mail deve ter no máximo 100 caracteres';
-                              if (!value.contains('@'))
-                                return 'E-mail inválido';
-                              return null;
-                            },
-                            onChanged: (v) => setState(() => _email = v),
-                          ),
+                  if (_showRegister && _registerError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        _registerError!,
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 16,
                         ),
-                        // Senha
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: TextFormField(
-                            enabled: !_loading,
-                            obscureText: true,
-                            maxLength: 32, // Limite máximo de caracteres
-                            decoration: InputDecoration(
-                              labelText: 'Senha',
-                              labelStyle: const TextStyle(
-                                fontSize: 18,
-                                color: Color(0xFF1D4988),
-                                fontWeight: FontWeight.w600,
-                              ),
-                              filled: true,
-                              fillColor: const Color(0xFFEBEBEB),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 12,
-                                horizontal: 12,
-                              ),
-                              counterText:
-                                  '', // Esconde o contador de caracteres
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty)
-                                return 'Digite sua senha';
-                              if (value.length < 8)
-                                return 'A senha deve ter pelo menos 8 caracteres';
-                              if (value.length > 32)
-                                return 'A senha deve ter no máximo 32 caracteres';
-                              return null;
-                            },
-                            onChanged: (v) => setState(() => _password = v),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Botão Login centralizado e com largura de 30%
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: offcanvasWidth * 0.3, // 30% da largura do offcanvas
-                              child: ElevatedButton(
-                                onPressed: _loading ? null : _handleLogin,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF1D4988),
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
-                                  textStyle: const TextStyle(fontSize: 18),
-                                ),
-                                child: _loading
-                                    ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                    : const Text('Entrar'),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                  ),
-                  // TODO: Adicionar botões para cadastro e recuperação de senha
+                  if (!_showRegister)
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          // Email
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: TextFormField(
+                              enabled: !_loading,
+                              keyboardType: TextInputType.emailAddress,
+                              maxLength: 100,
+                              decoration: InputDecoration(
+                                labelText: 'Email',
+                                labelStyle: const TextStyle(
+                                  fontSize: 18,
+                                  color: Color(0xFF1D4988),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                filled: true,
+                                fillColor: const Color(0xFFEBEBEB),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                  horizontal: 12,
+                                ),
+                                counterText: '',
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty)
+                                  return 'Digite seu e-mail';
+                                if (value.length < 5)
+                                  return 'O e-mail deve ter pelo menos 5 caracteres';
+                                if (value.length > 100)
+                                  return 'O e-mail deve ter no máximo 100 caracteres';
+                                if (!value.contains('@'))
+                                  return 'E-mail inválido';
+                                return null;
+                              },
+                              onChanged: (v) => setState(() => _email = v),
+                            ),
+                          ),
+                          // Senha
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: TextFormField(
+                              enabled: !_loading,
+                              obscureText: true,
+                              maxLength: 32,
+                              decoration: InputDecoration(
+                                labelText: 'Senha',
+                                labelStyle: const TextStyle(
+                                  fontSize: 18,
+                                  color: Color(0xFF1D4988),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                filled: true,
+                                fillColor: const Color(0xFFEBEBEB),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                  horizontal: 12,
+                                ),
+                                counterText: '',
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty)
+                                  return 'Digite sua senha';
+                                if (value.length < 8)
+                                  return 'A senha deve ter pelo menos 8 caracteres';
+                                if (value.length > 32)
+                                  return 'A senha deve ter no máximo 32 caracteres';
+                                return null;
+                              },
+                              onChanged: (v) => setState(() => _password = v),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          // Botões Login e Cadastro lado a lado
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: offcanvasWidth * 0.3,
+                                child: ElevatedButton(
+                                  onPressed: _loading ? null : _handleLogin,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF1D4988),
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    textStyle: const TextStyle(fontSize: 18),
+                                  ),
+                                  child:
+                                      _loading
+                                          ? const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                          : const Text('Entrar'),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              SizedBox(
+                                width: offcanvasWidth * 0.3,
+                                child: OutlinedButton(
+                                  onPressed:
+                                      _loading
+                                          ? null
+                                          : () {
+                                            setState(() {
+                                              _showRegister = true;
+                                              _registerError = null;
+                                              _registerEmail = '';
+                                              _registerPassword = '';
+                                              _registerConfirmPassword = '';
+                                              _registerName = '';
+                                            });
+                                          },
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: const Color(0xFF1D4988),
+                                    side: const BorderSide(
+                                      color: Color(0xFF1D4988),
+                                      width: 2,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    textStyle: const TextStyle(fontSize: 18),
+                                  ),
+                                  child: const Text('Cadastro'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (_showRegister)
+                    Form(
+                      key: _registerFormKey,
+                      child: Column(
+                        children: [
+                          // Nome completo
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: TextFormField(
+                              enabled: !_registerLoading,
+                              maxLength: 255,
+                              decoration: InputDecoration(
+                                labelText: 'Nome completo',
+                                labelStyle: const TextStyle(
+                                  fontSize: 18,
+                                  color: Color(0xFF1D4988),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                filled: true,
+                                fillColor: const Color(0xFFEBEBEB),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                  horizontal: 12,
+                                ),
+                                counterText: '',
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty)
+                                  return 'Digite seu nome completo';
+                                if (value.length > 255)
+                                  return 'O nome deve ter no máximo 255 caracteres';
+                                return null;
+                              },
+                              onChanged:
+                                  (v) => setState(() => _registerName = v),
+                            ),
+                          ),
+                          // Email
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: TextFormField(
+                              enabled: !_registerLoading,
+                              keyboardType: TextInputType.emailAddress,
+                              maxLength: 100,
+                              decoration: InputDecoration(
+                                labelText: 'Email',
+                                labelStyle: const TextStyle(
+                                  fontSize: 18,
+                                  color: Color(0xFF1D4988),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                filled: true,
+                                fillColor: const Color(0xFFEBEBEB),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                  horizontal: 12,
+                                ),
+                                counterText: '',
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty)
+                                  return 'Digite seu e-mail';
+                                if (value.length < 5)
+                                  return 'O e-mail deve ter pelo menos 5 caracteres';
+                                if (value.length > 100)
+                                  return 'O e-mail deve ter no máximo 100 caracteres';
+                                if (!value.contains('@'))
+                                  return 'E-mail inválido';
+                                return null;
+                              },
+                              onChanged:
+                                  (v) => setState(() => _registerEmail = v),
+                            ),
+                          ),
+                          // Senha
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                TextFormField(
+                                  enabled: !_registerLoading,
+                                  obscureText: true,
+                                  maxLength: 32,
+                                  decoration: InputDecoration(
+                                    labelText: 'Senha',
+                                    labelStyle: const TextStyle(
+                                      fontSize: 18,
+                                      color: Color(0xFF1D4988),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    filled: true,
+                                    fillColor: const Color(0xFFEBEBEB),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                      horizontal: 12,
+                                    ),
+                                    counterText: '',
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty)
+                                      return 'Digite sua senha';
+                                    if (value.length < 8)
+                                      return 'A senha deve ter pelo menos 8 caracteres';
+                                    if (value.length > 32)
+                                      return 'A senha deve ter no máximo 32 caracteres';
+                                    final strength = _passwordStrength(value);
+                                    if (strength == 'Fraca') {
+                                      return 'Senha fraca. Use letras maiúsculas, minúsculas, números e símbolos.';
+                                    }
+                                    return null;
+                                  },
+                                  onChanged:
+                                      (v) =>
+                                          setState(() => _registerPassword = v),
+                                ),
+                                if (_registerPassword.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      top: 4,
+                                      left: 4,
+                                    ),
+                                    child: Text(
+                                      'Força da senha: ${_passwordStrength(_registerPassword)}',
+                                      style: TextStyle(
+                                        color:
+                                            _passwordStrength(
+                                                      _registerPassword,
+                                                    ) ==
+                                                    'Forte'
+                                                ? Colors.green
+                                                : _passwordStrength(
+                                                      _registerPassword,
+                                                    ) ==
+                                                    'Média'
+                                                ? Colors.orange
+                                                : Colors.red,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          // Confirmar senha
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: TextFormField(
+                              enabled: !_registerLoading,
+                              obscureText: true,
+                              maxLength: 32,
+                              decoration: InputDecoration(
+                                labelText: 'Confirmar senha',
+                                labelStyle: const TextStyle(
+                                  fontSize: 18,
+                                  color: Color(0xFF1D4988),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                filled: true,
+                                fillColor: const Color(0xFFEBEBEB),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                  horizontal: 12,
+                                ),
+                                counterText: '',
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty)
+                                  return 'Confirme sua senha';
+                                if (value != _registerPassword)
+                                  return 'As senhas não conferem';
+                                return null;
+                              },
+                              onChanged:
+                                  (v) => setState(
+                                    () => _registerConfirmPassword = v,
+                                  ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          // Botão de cadastro e voltar
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: offcanvasWidth * 0.3,
+                                child: ElevatedButton(
+                                  onPressed:
+                                      _registerLoading ? null : _handleRegister,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF1D4988),
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    textStyle: const TextStyle(fontSize: 18),
+                                  ),
+                                  child:
+                                      _registerLoading
+                                          ? const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                          : const Text('Cadastrar'),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              SizedBox(
+                                width: offcanvasWidth * 0.3,
+                                child: OutlinedButton(
+                                  onPressed:
+                                      _registerLoading
+                                          ? null
+                                          : () {
+                                            setState(() {
+                                              _showRegister = false;
+                                              _registerError = null;
+                                            });
+                                          },
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: const Color(0xFF1D4988),
+                                    side: const BorderSide(
+                                      color: Color(0xFF1D4988),
+                                      width: 2,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    textStyle: const TextStyle(fontSize: 18),
+                                  ),
+                                  child: const Text('Voltar'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),
