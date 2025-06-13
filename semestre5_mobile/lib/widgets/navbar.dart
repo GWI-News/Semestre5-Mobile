@@ -94,7 +94,7 @@ class Navbar extends StatelessWidget {
               icon: Icons.info_rounded,
               label: 'Sobre',
               onTap: () {
-                Navigator.of(context).pushNamed('/about');
+                Navigator.of(context).pushNamed('/sobre');
               },
               iconSize: iconSize,
               labelFontSize: labelFontSize,

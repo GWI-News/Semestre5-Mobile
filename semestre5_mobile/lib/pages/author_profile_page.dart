@@ -29,10 +29,6 @@ class _AuthorProfilePageState extends State<AuthorProfilePage> {
     final double navbarHeight = height * 0.12;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Perfil do Autor'),
-        backgroundColor: const Color(0xFF1D4988),
-      ),
       body: Stack(
         children: [
           Center(
@@ -41,7 +37,7 @@ class _AuthorProfilePageState extends State<AuthorProfilePage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.edit_note, size: 80, color: Colors.blue[700]),
+                  Icon(Icons.person, size: 80, color: Color(0xFF1D4988)),
                   const SizedBox(height: 16),
                   Text(
                     user?.email ?? 'Usuário',

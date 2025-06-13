@@ -104,8 +104,10 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
           Navigator.of(context).pushReplacementNamed('/perfil/adm');
         } else if (userRole == 2) {
           Navigator.of(context).pushReplacementNamed('/perfil/autor');
+        } else if (userRole == 0) {
+          Navigator.of(context).pushReplacementNamed('/perfil/leitor');
         } else {
-          Navigator.of(context).pushReplacementNamed('/perfil/adm');
+          Navigator.of(context).pushReplacementNamed('/perfil/leitor');
         }
       }
     } on FirebaseAuthException catch (e) {
@@ -165,7 +167,7 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
       // Cria documento na collection Users
       await FirebaseFirestore.instance.collection('Users').doc(guid).set({
         'id': guid,
-        'userRole': 1,
+        'userRole': 0, // padrão agora é 0
         'completeName': _registerName.trim(),
         'email': _registerEmail.trim(),
         'active': true,
