@@ -4,16 +4,15 @@ import 'package:semestre5_mobile/widgets/news_filter.dart';
 import 'package:semestre5_mobile/widgets/navbar_user_utilities.dart';
 import 'package:semestre5_mobile/widgets/navbar.dart';
 import 'package:semestre5_mobile/widgets/header.dart';
-import 'package:semestre5_mobile/pages/news_crud_page.dart';
 
-class AdmProfilePage extends StatefulWidget {
-  const AdmProfilePage({super.key});
+class ReaderProfilePage extends StatefulWidget {
+  const ReaderProfilePage({super.key});
 
   @override
-  State<AdmProfilePage> createState() => _AdmProfilePageState();
+  State<ReaderProfilePage> createState() => _ReaderProfilePageState();
 }
 
-class _AdmProfilePageState extends State<AdmProfilePage> {
+class _ReaderProfilePageState extends State<ReaderProfilePage> {
   bool _showNewsFilter = false;
   bool _showUserUtilities = false;
 
@@ -39,10 +38,10 @@ class _AdmProfilePageState extends State<AdmProfilePage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons.admin_panel_settings,
+                    Icons.person,
                     size: 80,
                     color: Color(0xFF1D4988),
-                  ), // Ícone de admin
+                  ), // Ícone de leitor
                   const SizedBox(height: 16),
                   Text(
                     user?.email ?? 'Usuário',
@@ -53,7 +52,7 @@ class _AdmProfilePageState extends State<AdmProfilePage> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Nível de acesso: Administrador',
+                    'Nível de acesso: Leitor',
                     style: TextStyle(
                       fontSize: 16,
                       color: Color(0xFF1D4988),
@@ -61,32 +60,6 @@ class _AdmProfilePageState extends State<AdmProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.newspaper),
-                    label: const Text('Gerenciar Notícias'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFFF9F9F9),
-                      foregroundColor: Color(0xFF1D4988),
-                      side: const BorderSide(
-                        color: Color(0xFF1D4988),
-                        width: 2,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
-                      textStyle: const TextStyle(fontSize: 18),
-                    ),
-                    onPressed: () {
-                      Navigator.of(
-                        context,
-                      ).pushNamed('/perfil/adm/gerenciamento-noticias');
-                    },
-                  ),
-                  const SizedBox(height: 16),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.logout),
                     label: const Text('Logout'),
