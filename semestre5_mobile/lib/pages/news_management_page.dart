@@ -6,14 +6,14 @@ import 'package:semestre5_mobile/widgets/navbar.dart';
 import 'package:semestre5_mobile/widgets/news_filter.dart';
 import 'package:semestre5_mobile/widgets/navbar_user_utilities.dart';
 
-class NewsCrudPage extends StatefulWidget {
-  const NewsCrudPage({super.key});
+class NewsManagementPage extends StatefulWidget {
+  const NewsManagementPage({super.key});
 
   @override
-  State<NewsCrudPage> createState() => _NewsCrudPageState();
+  State<NewsManagementPage> createState() => _NewsManagementPageState();
 }
 
-class _NewsCrudPageState extends State<NewsCrudPage> {
+class _NewsManagementPageState extends State<NewsManagementPage> {
   List<Map<String, dynamic>> _newsList = [];
   bool _loading = true;
 

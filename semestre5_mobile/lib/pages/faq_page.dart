@@ -365,6 +365,7 @@ class _FaqPageState extends State<FaqPage> {
                 onClose: () {
                   setState(() {
                     _showNewsFilter = false;
+                    _showUserUtilities = false; // Fecha o outro offcanvas
                   });
                 },
               ),
@@ -381,6 +382,7 @@ class _FaqPageState extends State<FaqPage> {
                 onClose: () {
                   setState(() {
                     _showUserUtilities = false;
+                    _showNewsFilter = false; // Fecha o outro offcanvas
                   });
                 },
               ),
@@ -390,11 +392,13 @@ class _FaqPageState extends State<FaqPage> {
             onFilterTap: () {
               setState(() {
                 _showNewsFilter = true;
+                _showUserUtilities = false; // Fecha o outro offcanvas
               });
             },
             onUserTap: () {
               setState(() {
                 _showUserUtilities = true;
+                _showNewsFilter = false; // Fecha o outro offcanvas
               });
             },
           ),

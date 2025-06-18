@@ -11,7 +11,6 @@ class NewsSearchBar extends StatefulWidget {
 
 class _NewsSearchBarState extends State<NewsSearchBar> {
   final TextEditingController _controller = TextEditingController();
-  bool _searchBarDisplay = false;
   String _searchTerm = '';
   String _debouncedSearchTerm = '';
   List<Map<String, dynamic>> _searchNews = [];
@@ -146,105 +145,122 @@ class _NewsSearchBarState extends State<NewsSearchBar> {
   @override
   Widget build(BuildContext context) {
     final double width = MediaQuery.of(context).size.width;
-    const double closeButtonWidth = 56;
+    final double inputHeight = 48; // altura padrão do input
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 1. Botão de abrir/fechar barra de pesquisa
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            if (_searchBarDisplay)
-              // 2. Barra de pesquisa (input) à esquerda do botão
+        // Barra de pesquisa sempre exibida, sem container externo
+        Padding(
+          padding: const EdgeInsets.only(
+            top: 16,
+            left: 16,
+            right: 16,
+            bottom: 8,
+          ),
+          child: Row(
+            children: [
+              // Input de busca
               Expanded(
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: _searchBarDisplay ? double.infinity : 0,
-                  height: 56,
-                  margin: const EdgeInsets.only(
-                    bottom: 8,
-                    right: 0,
-                    left: 16,
-                    top: 16,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.10),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+                child: TextField(
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  maxLength: 75,
+                  decoration: InputDecoration(
+                    hintText: 'Busque por Notícias...',
+                    filled: true,
+                    fillColor: const Color(
+                      0xFFF9F9F9,
+                    ), // Cor de fundo clara, padrão do app
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF1D4988),
+                        width: 2,
                       ),
-                    ],
-                    border: Border.all(
-                      color: const Color(0xFF1D4988),
-                      width: 1,
                     ),
-                  ),
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 12.0, right: 8.0),
-                    child: TextField(
-                      controller: _controller,
-                      focusNode: _focusNode,
-                      autofocus: true,
-                      maxLength: 75, // Limite de 75 caracteres
-                      decoration: const InputDecoration(
-                        hintText: 'Busque por Notícias...',
-                        border: InputBorder.none,
-                        isDense: true,
-                        counterText: '', // Esconde o contador de caracteres
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF1D4988),
+                        width: 2,
                       ),
-                      style: const TextStyle(fontSize: 18),
                     ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF1D4988),
+                        width: 2,
+                      ),
+                    ),
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 12,
+                    ),
+                    counterText: '',
                   ),
+                  style: const TextStyle(fontSize: 18),
                 ),
               ),
-            // Botão de abrir/fechar
-            Container(
-              margin: const EdgeInsets.only(
-                top: 16,
-                bottom: 8,
-                right: 16,
-                left: 8,
-              ),
-              width: closeButtonWidth,
-              height: 56,
-              child: IconButton(
-                icon: Icon(
-                  _searchBarDisplay ? Icons.close : Icons.search,
-                  color: const Color(0xFF1D4988),
-                  size: _searchBarDisplay ? 28 : 32,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _searchBarDisplay = !_searchBarDisplay;
-                    if (!_searchBarDisplay) {
-                      _controller.clear();
-                      _searchNews = [];
-                      _resultSearch = true;
-                    } else {
-                      _focusNode.requestFocus();
-                    }
-                  });
-                },
-                splashRadius: 28,
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(Color(0xFFF9F9F9)),
-                  foregroundColor: MaterialStateProperty.all(Color(0xFF1D4988)),
-                  shape: MaterialStateProperty.all(const CircleBorder()),
-                  side: MaterialStateProperty.all(
-                    const BorderSide(color: Color(0xFF1D4988)),
-                  ),
-                ),
-              ),
-            ),
-          ],
+              const SizedBox(width: 8),
+              // Botão de busca (sempre uma lupa)
+              (_controller.text.isEmpty)
+                  ? Container(
+                      height: inputHeight,
+                      width: inputHeight,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF9F9F9),
+                        border: Border.all(
+                          color: const Color(0xFF1D4988),
+                          width: 2,
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.search,
+                          color: Color(0xFF1D4988),
+                          size: 28,
+                        ),
+                      ),
+                    )
+                  : Container(
+                      height: inputHeight,
+                      width: inputHeight,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF9F9F9),
+                        border: Border.all(
+                          color: const Color(0xFF1D4988),
+                          width: 2,
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.close,
+                          color: Color(0xFF1D4988),
+                          size: 28,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _controller.clear();
+                            _searchTerm = '';
+                            _debouncedSearchTerm = '';
+                            _searchNews = [];
+                            _resultSearch = true;
+                          });
+                        },
+                        splashRadius: 24,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ),
+            ],
+          ),
         ),
-        // 3. Resultados da busca abaixo dos elementos
-        if (_searchBarDisplay && _debouncedSearchTerm.isNotEmpty)
+        // Resultados da busca
+        if (_debouncedSearchTerm.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 8, left: 16, right: 16),
             child:

@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:semestre5_mobile/widgets/header.dart';
 import 'package:semestre5_mobile/widgets/navbar.dart';
 import 'package:semestre5_mobile/widgets/news_filter.dart'; // Import do filtro
+import 'package:semestre5_mobile/widgets/navbar_user_utilities.dart'; // Adicione este import
 
 class AboutUsPage extends StatefulWidget {
   const AboutUsPage({super.key});
@@ -13,6 +14,7 @@ class AboutUsPage extends StatefulWidget {
 
 class _AboutUsPageState extends State<AboutUsPage> {
   bool _showNewsFilter = false;
+  bool _showUserUtilities = false;
 
   @override
   Widget build(BuildContext context) {
@@ -254,15 +256,42 @@ class _AboutUsPageState extends State<AboutUsPage> {
                 onClose: () {
                   setState(() {
                     _showNewsFilter = false;
+                    // Garante que o outro offcanvas seja fechado
+                    _showUserUtilities = false;
                   });
                 },
               ),
             ),
-          // Passe o callback para o Navbar
+          // Offcanvas User Utilities
+          if (_showUserUtilities)
+            Positioned(
+              left: 0,
+              right: 0,
+              top: width > 576 ? navbarHeight : null,
+              bottom: width <= 576 ? navbarHeight : null,
+              child: NavbarUserUtilities(
+                showOffcanvas: true,
+                onClose: () {
+                  setState(() {
+                    _showUserUtilities = false;
+                    // Garante que o outro offcanvas seja fechado
+                    _showNewsFilter = false;
+                  });
+                },
+              ),
+            ),
+          // Passe os callbacks para o Navbar
           Navbar(
             onFilterTap: () {
               setState(() {
                 _showNewsFilter = true;
+                _showUserUtilities = false; // Fecha o outro offcanvas
+              });
+            },
+            onUserTap: () {
+              setState(() {
+                _showUserUtilities = true;
+                _showNewsFilter = false; // Fecha o outro offcanvas
               });
             },
           ),

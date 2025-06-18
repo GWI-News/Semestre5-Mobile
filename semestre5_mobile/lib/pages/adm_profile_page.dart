@@ -4,7 +4,7 @@ import 'package:semestre5_mobile/widgets/news_filter.dart';
 import 'package:semestre5_mobile/widgets/navbar_user_utilities.dart';
 import 'package:semestre5_mobile/widgets/navbar.dart';
 import 'package:semestre5_mobile/widgets/header.dart';
-import 'package:semestre5_mobile/pages/news_crud_page.dart';
+// import 'package:semestre5_mobile/pages/news_management_page.dart'; // Certifique-se deste import
 
 class AdmProfilePage extends StatefulWidget {
   const AdmProfilePage({super.key});
@@ -81,9 +81,35 @@ class _AdmProfilePageState extends State<AdmProfilePage> {
                       textStyle: const TextStyle(fontSize: 18),
                     ),
                     onPressed: () {
-                      Navigator.of(
-                        context,
-                      ).pushNamed('/perfil/adm/gerenciamento-noticias');
+                      Navigator.of(context).pushNamed(
+                        '/perfil/adm/gerenciamento-noticias',
+                      ); // Corrigido aqui
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.group),
+                    label: const Text('Gerenciar Usuários'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFFF9F9F9),
+                      foregroundColor: Color(0xFF1D4988),
+                      side: const BorderSide(
+                        color: Color(0xFF1D4988),
+                        width: 2,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
+                      textStyle: const TextStyle(fontSize: 18),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pushNamed(
+                        '/perfil/adm/gerenciamento-usuarios',
+                      );
                     },
                   ),
                   const SizedBox(height: 16),
