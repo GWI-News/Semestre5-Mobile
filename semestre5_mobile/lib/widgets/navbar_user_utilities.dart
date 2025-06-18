@@ -405,21 +405,27 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                   borderSide: const BorderSide(
-                                    color: Color(0xFF1D4988), // Azul padrão do app
+                                    color: Color(
+                                      0xFF1D4988,
+                                    ), // Azul padrão do app
                                     width: 2,
                                   ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                   borderSide: const BorderSide(
-                                    color: Color(0xFF1D4988), // Azul padrão do app
+                                    color: Color(
+                                      0xFF1D4988,
+                                    ), // Azul padrão do app
                                     width: 2,
                                   ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                   borderSide: const BorderSide(
-                                    color: Color(0xFF1D4988), // Azul padrão do app
+                                    color: Color(
+                                      0xFF1D4988,
+                                    ), // Azul padrão do app
                                     width: 2,
                                   ),
                                 ),
@@ -462,21 +468,27 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                   borderSide: const BorderSide(
-                                    color: Color(0xFF1D4988), // Azul padrão do app
+                                    color: Color(
+                                      0xFF1D4988,
+                                    ), // Azul padrão do app
                                     width: 2,
                                   ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                   borderSide: const BorderSide(
-                                    color: Color(0xFF1D4988), // Azul padrão do app
+                                    color: Color(
+                                      0xFF1D4988,
+                                    ), // Azul padrão do app
                                     width: 2,
                                   ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                   borderSide: const BorderSide(
-                                    color: Color(0xFF1D4988), // Azul padrão do app
+                                    color: Color(
+                                      0xFF1D4988,
+                                    ), // Azul padrão do app
                                     width: 2,
                                   ),
                                 ),
@@ -593,21 +605,27 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                   borderSide: const BorderSide(
-                                    color: Color(0xFF1D4988), // Azul padrão do app
+                                    color: Color(
+                                      0xFF1D4988,
+                                    ), // Azul padrão do app
                                     width: 2,
                                   ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                   borderSide: const BorderSide(
-                                    color: Color(0xFF1D4988), // Azul padrão do app
+                                    color: Color(
+                                      0xFF1D4988,
+                                    ), // Azul padrão do app
                                     width: 2,
                                   ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                   borderSide: const BorderSide(
-                                    color: Color(0xFF1D4988), // Azul padrão do app
+                                    color: Color(
+                                      0xFF1D4988,
+                                    ), // Azul padrão do app
                                     width: 2,
                                   ),
                                 ),
@@ -647,21 +665,27 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                   borderSide: const BorderSide(
-                                    color: Color(0xFF1D4988), // Azul padrão do app
+                                    color: Color(
+                                      0xFF1D4988,
+                                    ), // Azul padrão do app
                                     width: 2,
                                   ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                   borderSide: const BorderSide(
-                                    color: Color(0xFF1D4988), // Azul padrão do app
+                                    color: Color(
+                                      0xFF1D4988,
+                                    ), // Azul padrão do app
                                     width: 2,
                                   ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                   borderSide: const BorderSide(
-                                    color: Color(0xFF1D4988), // Azul padrão do app
+                                    color: Color(
+                                      0xFF1D4988,
+                                    ), // Azul padrão do app
                                     width: 2,
                                   ),
                                 ),
@@ -708,21 +732,27 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8),
                                       borderSide: const BorderSide(
-                                        color: Color(0xFF1D4988), // Azul padrão do app
+                                        color: Color(
+                                          0xFF1D4988,
+                                        ), // Azul padrão do app
                                         width: 2,
                                       ),
                                     ),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8),
                                       borderSide: const BorderSide(
-                                        color: Color(0xFF1D4988), // Azul padrão do app
+                                        color: Color(
+                                          0xFF1D4988,
+                                        ), // Azul padrão do app
                                         width: 2,
                                       ),
                                     ),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8),
                                       borderSide: const BorderSide(
-                                        color: Color(0xFF1D4988), // Azul padrão do app
+                                        color: Color(
+                                          0xFF1D4988,
+                                        ), // Azul padrão do app
                                         width: 2,
                                       ),
                                     ),
@@ -796,21 +826,27 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                   borderSide: const BorderSide(
-                                    color: Color(0xFF1D4988), // Azul padrão do app
+                                    color: Color(
+                                      0xFF1D4988,
+                                    ), // Azul padrão do app
                                     width: 2,
                                   ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                   borderSide: const BorderSide(
-                                    color: Color(0xFF1D4988), // Azul padrão do app
+                                    color: Color(
+                                      0xFF1D4988,
+                                    ), // Azul padrão do app
                                     width: 2,
                                   ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                   borderSide: const BorderSide(
-                                    color: Color(0xFF1D4988), // Azul padrão do app
+                                    color: Color(
+                                      0xFF1D4988,
+                                    ), // Azul padrão do app
                                     width: 2,
                                   ),
                                 ),

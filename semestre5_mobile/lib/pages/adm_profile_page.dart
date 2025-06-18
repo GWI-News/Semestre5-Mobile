@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:semestre5_mobile/widgets/news_filter.dart';
 import 'package:semestre5_mobile/widgets/navbar_user_utilities.dart';
 import 'package:semestre5_mobile/widgets/navbar.dart';
@@ -16,6 +17,42 @@ class AdmProfilePage extends StatefulWidget {
 class _AdmProfilePageState extends State<AdmProfilePage> {
   bool _showNewsFilter = false;
   bool _showUserUtilities = false;
+  bool _checkingAccess = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _validateAdminAccess();
+  }
+
+  Future<void> _validateAdminAccess() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/home');
+      }
+      return;
+    }
+    // Busca documento do usuário pelo campo auth_uid
+    final query =
+        await FirebaseFirestore.instance
+            .collection('Users')
+            .where('auth_uid', isEqualTo: user.uid)
+            .limit(1)
+            .get();
+
+    if (query.docs.isEmpty || query.docs.first.data()['userRole'] != 1) {
+      // Se falhar, encerra a sessão e redireciona
+      await FirebaseAuth.instance.signOut();
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/home');
+      }
+      return;
+    }
+    setState(() {
+      _checkingAccess = false;
+    });
+  }
 
   Future<void> _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
@@ -28,6 +65,10 @@ class _AdmProfilePageState extends State<AdmProfilePage> {
     final double width = MediaQuery.of(context).size.width;
     final double height = MediaQuery.of(context).size.height;
     final double navbarHeight = height * 0.12;
+
+    if (_checkingAccess) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     return Scaffold(
       body: Stack(
@@ -107,9 +148,9 @@ class _AdmProfilePageState extends State<AdmProfilePage> {
                       textStyle: const TextStyle(fontSize: 18),
                     ),
                     onPressed: () {
-                      Navigator.of(context).pushNamed(
-                        '/perfil/adm/gerenciamento-usuarios',
-                      );
+                      Navigator.of(
+                        context,
+                      ).pushNamed('/perfil/adm/gerenciamento-usuarios');
                     },
                   ),
                   const SizedBox(height: 16),
