@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Navbar extends StatelessWidget {
   final VoidCallback? onFilterTap;
@@ -103,11 +104,49 @@ class Navbar extends StatelessWidget {
             _NavbarIcon(
               icon: Icons.person_rounded,
               label: 'Perfil',
-              onTap: () {
+              onTap: () async {
                 final user = FirebaseAuth.instance.currentUser;
                 if (user != null && user.emailVerified) {
-                  // Usuário autenticado e email verificado: redireciona para perfil
-                  Navigator.of(context).pushReplacementNamed('/perfil/adm');
+                  // Busca robusta do userRole
+                  QuerySnapshot<Map<String, dynamic>> userDoc =
+                      await FirebaseFirestore.instance
+                          .collection('Users')
+                          .where('auth_uid', isEqualTo: user.uid)
+                          .limit(1)
+                          .get();
+
+                  if (userDoc.docs.isEmpty) {
+                    userDoc =
+                        await FirebaseFirestore.instance
+                            .collection('Users')
+                            .where('id', isEqualTo: user.uid)
+                            .limit(1)
+                            .get();
+                  }
+                  if (userDoc.docs.isEmpty) {
+                    userDoc =
+                        await FirebaseFirestore.instance
+                            .collection('Users')
+                            .where('email', isEqualTo: user.email)
+                            .limit(1)
+                            .get();
+                  }
+
+                  int userRole = 0; // padrão leitor
+                  if (userDoc.docs.isNotEmpty &&
+                      userDoc.docs.first.data().containsKey('userRole')) {
+                    userRole = userDoc.docs.first['userRole'] ?? 0;
+                  }
+
+                  if (userRole == 1) {
+                    Navigator.of(context).pushReplacementNamed('/perfil/adm');
+                  } else if (userRole == 2) {
+                    Navigator.of(context).pushReplacementNamed('/perfil/autor');
+                  } else {
+                    Navigator.of(
+                      context,
+                    ).pushReplacementNamed('/perfil/leitor');
+                  }
                 } else {
                   // Usuário não autenticado: abre o offcanvas de login
                   if (onUserTap != null) onUserTap!();

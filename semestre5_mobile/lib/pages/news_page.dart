@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:semestre5_mobile/widgets/header.dart';
 import 'package:semestre5_mobile/widgets/navbar.dart';
 import 'package:semestre5_mobile/widgets/news_filter.dart';
@@ -29,10 +30,15 @@ class _NewsPageState extends State<NewsPage> {
   bool _showNewsFilter = false;
   bool _showUserUtilities = false;
 
+  bool _isFavorite = false;
+  bool _checkingFavorite = true;
+  String? _currentUserId;
+
   @override
   void initState() {
     super.initState();
     fetchNewsItem();
+    _checkFavoriteStatus();
   }
 
   Future<void> fetchNewsItem() async {
@@ -58,6 +64,97 @@ class _NewsPageState extends State<NewsPage> {
         isLoading = false;
       });
     }
+  }
+
+  Future<void> _checkFavoriteStatus() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      setState(() {
+        _isFavorite = false;
+        _checkingFavorite = false;
+        _currentUserId = null;
+      });
+      return;
+    }
+    _currentUserId = user.uid;
+
+    // Busca documento do usuário pelo campo "auth_uid"
+    final query =
+        await FirebaseFirestore.instance
+            .collection('Users')
+            .where('auth_uid', isEqualTo: user.uid)
+            .limit(1)
+            .get();
+
+    if (query.docs.isEmpty) {
+      setState(() {
+        _isFavorite = false;
+        _checkingFavorite = false;
+      });
+      return;
+    }
+
+    final userDoc = query.docs.first.data();
+    final favList =
+        (userDoc['favourite_news'] as List?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        [];
+
+    setState(() {
+      _isFavorite = favList.contains(widget.newsId.toString());
+      _checkingFavorite = false;
+    });
+  }
+
+  Future<void> _toggleFavorite() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      setState(() {
+        _showUserUtilities = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'É necessário estar logado para favoritar uma notícia.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Busca documento do usuário pelo campo "auth_uid"
+    final query =
+        await FirebaseFirestore.instance
+            .collection('Users')
+            .where('auth_uid', isEqualTo: user.uid)
+            .limit(1)
+            .get();
+
+    if (query.docs.isEmpty) return;
+
+    final docRef = query.docs.first.reference;
+    final data = query.docs.first.data();
+    final favList =
+        (data['favourite_news'] as List?)?.map((e) => e.toString()).toList() ??
+        [];
+    final newsIdStr = widget.newsId.toString();
+
+    if (_isFavorite) {
+      // Remove dos favoritos
+      favList.remove(newsIdStr);
+    } else {
+      // Adiciona aos favoritos
+      if (!favList.contains(newsIdStr)) {
+        favList.add(newsIdStr);
+      }
+    }
+
+    await docRef.update({'favourite_news': favList});
+    setState(() {
+      _isFavorite = !_isFavorite;
+    });
   }
 
   String formatDate(Timestamp? timestamp) {
@@ -126,138 +223,200 @@ class _NewsPageState extends State<NewsPage> {
                 left: 12,
                 right: 12,
               ),
-              child: SingleChildScrollView(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 800),
-                    child:
-                        isLoading
-                            ? const Center(child: CircularProgressIndicator())
-                            : newsItem == null
-                            ? const Center(
-                              child: Text('Notícia não encontrada.'),
-                            )
-                            : Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(
-                                  newsItem!['title'] ?? '',
-                                  style: const TextStyle(
-                                    fontSize: 40,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                                if (newsItem!['subtitle'] != null)
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                    ),
-                                    child: Text(
-                                      newsItem!['subtitle'],
-                                      style: TextStyle(
-                                        fontSize:
-                                            (width >= 992 ? 24 : 18) * 1.2,
-                                        fontWeight: FontWeight.w400,
-                                        fontStyle: FontStyle.italic,
+              child: Stack(
+                children: [
+                  // Conteúdo principal da notícia
+                  SingleChildScrollView(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 800),
+                        child:
+                            isLoading
+                                ? const Center(
+                                  child: CircularProgressIndicator(),
+                                )
+                                : newsItem == null
+                                ? const Center(
+                                  child: Text('Notícia não encontrada.'),
+                                )
+                                : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    // Título
+                                    Text(
+                                      newsItem!['title'] ?? '',
+                                      style: const TextStyle(
+                                        fontSize: 40,
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                      textAlign: TextAlign.justify,
+                                      textAlign: TextAlign.center,
                                     ),
-                                  ),
-                                ...splitTextContent(
-                                  newsItem!['text_content'],
-                                ).asMap().entries.map((entry) {
-                                  final index = entry.key;
-                                  final paragraph = entry.value;
-                                  return Column(
-                                    children: [
+                                    // Subtítulo
+                                    if (newsItem!['subtitle'] != null)
                                       Padding(
                                         padding: const EdgeInsets.symmetric(
-                                          vertical: 4,
+                                          vertical: 16,
                                         ),
                                         child: Text(
-                                          paragraph,
+                                          newsItem!['subtitle'],
                                           style: TextStyle(
                                             fontSize:
-                                                (width >= 992 ? 20 : 16) * 1.2,
+                                                (width >= 992 ? 24 : 18) * 1.2,
+                                            fontWeight: FontWeight.w400,
+                                            fontStyle: FontStyle.italic,
                                           ),
-                                          textAlign: TextAlign.justify,
+                                          textAlign:
+                                              TextAlign
+                                                  .left, // alterado de justify para left
                                         ),
                                       ),
-                                      if (index == 0 &&
-                                          newsItem!['url_image'] != null)
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 16,
+                                    // Corpo da notícia (parágrafos)
+                                    ...splitTextContent(
+                                      newsItem!['text_content'],
+                                    ).asMap().entries.map((entry) {
+                                      final index = entry.key;
+                                      final paragraph = entry.value;
+                                      return Column(
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 4,
+                                            ),
+                                            child: Text(
+                                              paragraph,
+                                              style: TextStyle(
+                                                fontSize:
+                                                    (width >= 992 ? 20 : 16) *
+                                                    1.2,
+                                              ),
+                                              textAlign:
+                                                  TextAlign
+                                                      .left, // alterado de justify para left
+                                            ),
                                           ),
-                                          child: Image.network(
-                                            newsItem!['url_image'],
-                                            semanticLabel:
-                                                newsItem!['alt_image'] ?? '',
-                                            width: width * 0.75,
-                                            fit: BoxFit.contain,
+                                          if (index == 0 &&
+                                              newsItem!['url_image'] != null)
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 16,
+                                                  ),
+                                              child: Image.network(
+                                                newsItem!['url_image'],
+                                                semanticLabel:
+                                                    newsItem!['alt_image'] ??
+                                                    '',
+                                                width: width * 0.75,
+                                                fit: BoxFit.contain,
+                                              ),
+                                            ),
+                                        ],
+                                      );
+                                    }),
+                                    const SizedBox(height: 16),
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Categoria: ${widget.newsCategory}.',
+                                            style: const TextStyle(
+                                              fontStyle: FontStyle.italic,
+                                              fontSize: 16,
+                                            ),
+                                            textAlign: TextAlign.start,
                                           ),
-                                        ),
-                                    ],
-                                  );
-                                }),
-                                const SizedBox(height: 16),
-                                Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Categoria: ${widget.newsCategory}.',
-                                        style: const TextStyle(
-                                          fontStyle: FontStyle.italic,
-                                          fontSize: 16,
-                                        ),
-                                        textAlign: TextAlign.start,
+                                          Text(
+                                            'Subcategorias: ${widget.newsSubcategories}.',
+                                            style: const TextStyle(
+                                              fontStyle: FontStyle.italic,
+                                              fontSize: 16,
+                                            ),
+                                            textAlign: TextAlign.start,
+                                          ),
+                                          if (newsItem!['author'] != null)
+                                            Text(
+                                              'Escrito por ${_capitalize(newsItem!['author'])}.',
+                                              style: const TextStyle(
+                                                fontStyle: FontStyle.italic,
+                                                fontSize: 16,
+                                              ),
+                                              textAlign: TextAlign.start,
+                                            ),
+                                          if (newsItem!['editor'] != null)
+                                            Text(
+                                              'Editado e Publicado por ${_capitalize(newsItem!['editor'])}.',
+                                              style: const TextStyle(
+                                                fontStyle: FontStyle.italic,
+                                                fontSize: 16,
+                                              ),
+                                              textAlign: TextAlign.start,
+                                            ),
+                                          if (newsItem!['publication_date'] !=
+                                              null)
+                                            Text(
+                                              'Última atualização em ${formatDate(newsItem!['publication_date'])}.',
+                                              style: const TextStyle(
+                                                fontStyle: FontStyle.italic,
+                                                fontSize: 16,
+                                              ),
+                                              textAlign: TextAlign.start,
+                                            ),
+                                        ],
                                       ),
-                                      Text(
-                                        'Subcategorias: ${widget.newsSubcategories}.',
-                                        style: const TextStyle(
-                                          fontStyle: FontStyle.italic,
-                                          fontSize: 16,
-                                        ),
-                                        textAlign: TextAlign.start,
-                                      ),
-                                      if (newsItem!['author'] != null)
-                                        Text(
-                                          'Escrito por ${_capitalize(newsItem!['author'])}.',
-                                          style: const TextStyle(
-                                            fontStyle: FontStyle.italic,
-                                            fontSize: 16,
-                                          ),
-                                          textAlign: TextAlign.start,
-                                        ),
-                                      if (newsItem!['editor'] != null)
-                                        Text(
-                                          'Editado e Publicado por ${_capitalize(newsItem!['editor'])}.',
-                                          style: const TextStyle(
-                                            fontStyle: FontStyle.italic,
-                                            fontSize: 16,
-                                          ),
-                                          textAlign: TextAlign.start,
-                                        ),
-                                      if (newsItem!['publication_date'] != null)
-                                        Text(
-                                          'Última atualização em ${formatDate(newsItem!['publication_date'])}.',
-                                          style: const TextStyle(
-                                            fontStyle: FontStyle.italic,
-                                            fontSize: 16,
-                                          ),
-                                          textAlign: TextAlign.start,
-                                        ),
-                                    ],
-                                  ),
+                                    ),
+                                    const SizedBox(
+                                      height: 64,
+                                    ), // Espaço para o ícone não sobrepor conteúdo
+                                  ],
                                 ),
-                              ],
-                            ),
+                      ),
+                    ),
                   ),
-                ),
+                  // Ícone de estrela fixo no canto inferior direito do conteúdo principal
+                  Positioned(
+                    right: 0,
+                    bottom: 8,
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: _toggleFavorite,
+                        child: Container(
+                          height: 48,
+                          width: 48,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF9F9F9),
+                            border: Border.all(
+                              color: const Color(
+                                0xFF1D4988,
+                              ), // Sempre azul padrão
+                              width: 2,
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Icon(
+                              (_currentUserId == null)
+                                  ? Icons.star_border
+                                  : (_isFavorite
+                                      ? Icons.star
+                                      : Icons.star_border),
+                              color:
+                                  (_currentUserId == null)
+                                      ? const Color(0xFF1D4988)
+                                      : (_isFavorite
+                                          ? Colors.amber
+                                          : const Color(0xFF1D4988)),
+                              size: 28,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

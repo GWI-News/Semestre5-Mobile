@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:semestre5_mobile/widgets/news_filter.dart';
 import 'package:semestre5_mobile/widgets/navbar_user_utilities.dart';
 import 'package:semestre5_mobile/widgets/navbar.dart';
@@ -15,6 +16,12 @@ class AuthorProfilePage extends StatefulWidget {
 class _AuthorProfilePageState extends State<AuthorProfilePage> {
   bool _showNewsFilter = false;
   bool _showUserUtilities = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Nenhuma validação de acesso
+  }
 
   Future<void> _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
