@@ -5,6 +5,7 @@ import 'package:semestre5_mobile/widgets/news_filter.dart';
 import 'package:semestre5_mobile/widgets/navbar_user_utilities.dart';
 import 'package:semestre5_mobile/widgets/navbar.dart';
 import 'package:semestre5_mobile/widgets/header.dart';
+import 'package:semestre5_mobile/widgets/news_card.dart';
 
 class ReaderProfilePage extends StatefulWidget {
   const ReaderProfilePage({super.key});
@@ -16,40 +17,100 @@ class ReaderProfilePage extends StatefulWidget {
 class _ReaderProfilePageState extends State<ReaderProfilePage> {
   bool _showNewsFilter = false;
   bool _showUserUtilities = false;
-  bool _checkingAccess = true;
+
+  List<Map<String, dynamic>> _favoriteNews = [];
+  bool _loadingFavorites = true;
+  String? _completeName;
 
   @override
   void initState() {
     super.initState();
-    _validateReaderAccess();
+    _fetchFavoriteNews();
+    _fetchUserName();
   }
 
-  Future<void> _validateReaderAccess() async {
+  Future<void> _fetchUserName() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
-      }
+      setState(() {
+        _completeName = null;
+      });
       return;
     }
-    // Busca documento do usuário pelo campo auth_uid
-    final query =
+    QuerySnapshot<Map<String, dynamic>> query =
         await FirebaseFirestore.instance
             .collection('Users')
             .where('auth_uid', isEqualTo: user.uid)
             .limit(1)
             .get();
 
-    if (query.docs.isEmpty || query.docs.first.data()['userRole'] != 0) {
-      // Se falhar, encerra a sessão e redireciona
-      await FirebaseAuth.instance.signOut();
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
-      }
+    if (query.docs.isNotEmpty) {
+      setState(() {
+        _completeName = query.docs.first.data()['completeName'] ?? null;
+      });
+    } else {
+      setState(() {
+        _completeName = null;
+      });
+    }
+  }
+
+  Future<void> _fetchFavoriteNews() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      setState(() {
+        _favoriteNews = [];
+        _loadingFavorites = false;
+      });
       return;
     }
+
+    // Busca documento do usuário pelo campo "auth_uid"
+    QuerySnapshot<Map<String, dynamic>> query =
+        await FirebaseFirestore.instance
+            .collection('Users')
+            .where('auth_uid', isEqualTo: user.uid)
+            .limit(1)
+            .get();
+
+    if (query.docs.isEmpty) {
+      setState(() {
+        _favoriteNews = [];
+        _loadingFavorites = false;
+      });
+      return;
+    }
+
+    final userDoc = query.docs.first.data();
+    final favList =
+        (userDoc['favourite_news'] as List?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        [];
+
+    if (favList.isEmpty) {
+      setState(() {
+        _favoriteNews = [];
+        _loadingFavorites = false;
+      });
+      return;
+    }
+
+    // Busca as notícias favoritas
+    final newsQuery =
+        await FirebaseFirestore.instance
+            .collection('News')
+            .where(FieldPath.documentId, whereIn: favList)
+            .get();
+
     setState(() {
-      _checkingAccess = false;
+      _favoriteNews =
+          newsQuery.docs.map((doc) {
+            final data = doc.data();
+            data['id'] = doc.id;
+            return data;
+          }).toList();
+      _loadingFavorites = false;
     });
   }
 
@@ -63,59 +124,144 @@ class _ReaderProfilePageState extends State<ReaderProfilePage> {
     final user = FirebaseAuth.instance.currentUser;
     final double width = MediaQuery.of(context).size.width;
     final double height = MediaQuery.of(context).size.height;
-    final double navbarHeight = height * 0.12;
 
-    if (_checkingAccess) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
+    final double headerHeight = height * 0.12;
+    final double navbarHeight = width <= 576 ? height * 0.10 : height * 0.12;
+    final double topPadding = headerHeight;
+    final double bottomPadding = width <= 576 ? navbarHeight : 0;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFEBEBEB),
       body: Stack(
         children: [
-          Center(
+          Positioned.fill(
             child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.person,
-                    size: 80,
-                    color: Color(0xFF1D4988),
-                  ), // Ícone de leitor
-                  const SizedBox(height: 16),
-                  Text(
-                    user?.email ?? 'Usuário',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+              padding: EdgeInsets.only(
+                top: topPadding,
+                bottom: bottomPadding,
+                left: 8,
+                right: 8,
+              ),
+              child: SingleChildScrollView(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1200),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 24),
+                        Icon(
+                          Icons.person,
+                          size: 120, // Aumentado de 80 para 120
+                          color: const Color(0xFF1D4988),
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          _completeName ?? user?.email ?? 'Usuário',
+                          style: const TextStyle(
+                            fontSize: 32, // Aumentado de 22 para 32
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (user?.email != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0, bottom: 0),
+                            child: Text(
+                              user!.email!,
+                              style: const TextStyle(
+                                fontSize: 22, // Aumentado de 16 para 22
+                                color: Color(0xFF1D4988),
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 32),
+                        ElevatedButton.icon(
+                          icon: const Icon(
+                            Icons.logout,
+                            color: Color(0xFF1D4988),
+                          ),
+                          label: const Text('Logout'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: const Color(0xFF1D4988),
+                            side: const BorderSide(
+                              color: Color(0xFF1D4988),
+                              width: 2,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
+                            ),
+                            textStyle: const TextStyle(fontSize: 18),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            elevation: 0,
+                          ),
+                          onPressed: () => _logout(context),
+                        ),
+                        const SizedBox(height: 32),
+                        // Sessão de notícias favoritas
+                        Center(
+                          child: Text(
+                            'Notícias Favoritas',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1D4988),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        if (_loadingFavorites)
+                          const Center(child: CircularProgressIndicator())
+                        else if (_favoriteNews.isEmpty)
+                          const Text(
+                            'Nenhuma notícia favoritada.',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFF1D4988),
+                            ),
+                          )
+                        else
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 8,
+                            runSpacing: 8,
+                            children:
+                                _favoriteNews.map((news) {
+                                  return NewsCard(
+                                    newsItem: news,
+                                    categoryName:
+                                        news['news_category_name'] ?? '',
+                                    subcategoriesNames:
+                                        (news['news_subcategories']
+                                                    as List<dynamic>? ??
+                                                [])
+                                            .cast<String>()
+                                            .join(', '),
+                                    onTap: () {
+                                      Navigator.of(context).pushNamed(
+                                        '/noticia',
+                                        arguments: {
+                                          'newsCategory':
+                                              news['news_category_id'] ?? '',
+                                          'newsSubcategories':
+                                              news['news_subcategories'] ?? '',
+                                          'newsId': news['id'],
+                                        },
+                                      );
+                                    },
+                                  );
+                                }).toList(),
+                          ),
+                        const SizedBox(height: 8),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Nível de acesso: Leitor',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF1D4988),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.logout),
-                    label: const Text('Logout'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1D4988),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
-                      textStyle: const TextStyle(fontSize: 18),
-                    ),
-                    onPressed: () => _logout(context),
-                  ),
-                ],
+                ),
               ),
             ),
           ),

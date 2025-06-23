@@ -16,41 +16,11 @@ class AuthorProfilePage extends StatefulWidget {
 class _AuthorProfilePageState extends State<AuthorProfilePage> {
   bool _showNewsFilter = false;
   bool _showUserUtilities = false;
-  bool _checkingAccess = true;
 
   @override
   void initState() {
     super.initState();
-    _validateAuthorAccess();
-  }
-
-  Future<void> _validateAuthorAccess() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
-      }
-      return;
-    }
-    // Busca documento do usuário pelo campo auth_uid
-    final query =
-        await FirebaseFirestore.instance
-            .collection('Users')
-            .where('auth_uid', isEqualTo: user.uid)
-            .limit(1)
-            .get();
-
-    if (query.docs.isEmpty || query.docs.first.data()['userRole'] != 2) {
-      // Se falhar, encerra a sessão e redireciona
-      await FirebaseAuth.instance.signOut();
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
-      }
-      return;
-    }
-    setState(() {
-      _checkingAccess = false;
-    });
+    // Nenhuma validação de acesso
   }
 
   Future<void> _logout(BuildContext context) async {
@@ -64,10 +34,6 @@ class _AuthorProfilePageState extends State<AuthorProfilePage> {
     final double width = MediaQuery.of(context).size.width;
     final double height = MediaQuery.of(context).size.height;
     final double navbarHeight = height * 0.12;
-
-    if (_checkingAccess) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
 
     return Scaffold(
       body: Stack(

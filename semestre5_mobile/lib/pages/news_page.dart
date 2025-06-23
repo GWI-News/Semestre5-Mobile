@@ -79,11 +79,12 @@ class _NewsPageState extends State<NewsPage> {
     _currentUserId = user.uid;
 
     // Busca documento do usuário pelo campo "auth_uid"
-    final query = await FirebaseFirestore.instance
-        .collection('Users')
-        .where('auth_uid', isEqualTo: user.uid)
-        .limit(1)
-        .get();
+    final query =
+        await FirebaseFirestore.instance
+            .collection('Users')
+            .where('auth_uid', isEqualTo: user.uid)
+            .limit(1)
+            .get();
 
     if (query.docs.isEmpty) {
       setState(() {
@@ -94,13 +95,65 @@ class _NewsPageState extends State<NewsPage> {
     }
 
     final userDoc = query.docs.first.data();
-    final favList = (userDoc['favourite_news'] as List?)
-        ?.map((e) => e.toString())
-        .toList() ?? [];
+    final favList =
+        (userDoc['favourite_news'] as List?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        [];
 
     setState(() {
       _isFavorite = favList.contains(widget.newsId.toString());
       _checkingFavorite = false;
+    });
+  }
+
+  Future<void> _toggleFavorite() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      setState(() {
+        _showUserUtilities = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'É necessário estar logado para favoritar uma notícia.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Busca documento do usuário pelo campo "auth_uid"
+    final query =
+        await FirebaseFirestore.instance
+            .collection('Users')
+            .where('auth_uid', isEqualTo: user.uid)
+            .limit(1)
+            .get();
+
+    if (query.docs.isEmpty) return;
+
+    final docRef = query.docs.first.reference;
+    final data = query.docs.first.data();
+    final favList =
+        (data['favourite_news'] as List?)?.map((e) => e.toString()).toList() ??
+        [];
+    final newsIdStr = widget.newsId.toString();
+
+    if (_isFavorite) {
+      // Remove dos favoritos
+      favList.remove(newsIdStr);
+    } else {
+      // Adiciona aos favoritos
+      if (!favList.contains(newsIdStr)) {
+        favList.add(newsIdStr);
+      }
+    }
+
+    await docRef.update({'favourite_news': favList});
+    setState(() {
+      _isFavorite = !_isFavorite;
     });
   }
 
@@ -189,6 +242,7 @@ class _NewsPageState extends State<NewsPage> {
                                 : Column(
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
+                                    // Título
                                     Text(
                                       newsItem!['title'] ?? '',
                                       style: const TextStyle(
@@ -197,6 +251,7 @@ class _NewsPageState extends State<NewsPage> {
                                       ),
                                       textAlign: TextAlign.center,
                                     ),
+                                    // Subtítulo
                                     if (newsItem!['subtitle'] != null)
                                       Padding(
                                         padding: const EdgeInsets.symmetric(
@@ -210,9 +265,12 @@ class _NewsPageState extends State<NewsPage> {
                                             fontWeight: FontWeight.w400,
                                             fontStyle: FontStyle.italic,
                                           ),
-                                          textAlign: TextAlign.justify,
+                                          textAlign:
+                                              TextAlign
+                                                  .left, // alterado de justify para left
                                         ),
                                       ),
+                                    // Corpo da notícia (parágrafos)
                                     ...splitTextContent(
                                       newsItem!['text_content'],
                                     ).asMap().entries.map((entry) {
@@ -231,7 +289,9 @@ class _NewsPageState extends State<NewsPage> {
                                                     (width >= 992 ? 20 : 16) *
                                                     1.2,
                                               ),
-                                              textAlign: TextAlign.justify,
+                                              textAlign:
+                                                  TextAlign
+                                                      .left, // alterado de justify para left
                                             ),
                                           ),
                                           if (index == 0 &&
@@ -318,46 +378,39 @@ class _NewsPageState extends State<NewsPage> {
                   // Ícone de estrela fixo no canto inferior direito do conteúdo principal
                   Positioned(
                     right: 0,
-                    bottom: 0,
-                    child: Material(
-                      color: Colors.transparent,
-                      elevation: 8,
-                      shape: const CircleBorder(),
-                      child: Container(
-                        height: 64,
-                        width: 64,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.10),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
+                    bottom: 8,
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: _toggleFavorite,
+                        child: Container(
+                          height: 48,
+                          width: 48,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF9F9F9),
+                            border: Border.all(
+                              color: const Color(
+                                0xFF1D4988,
+                              ), // Sempre azul padrão
+                              width: 2,
                             ),
-                          ],
-                          border: Border.all(
-                            color:
-                                _isFavorite && _currentUserId != null
-                                    ? Colors.amber
-                                    : Colors.grey[400]!,
-                            width: 2,
+                            shape: BoxShape.circle,
                           ),
-                        ),
-                        child: Center(
-                          child: Icon(
-                            (_currentUserId == null)
-                                ? Icons.star_border
-                                : (_isFavorite
-                                    ? Icons.star
-                                    : Icons.star_border),
-                            color:
-                                (_currentUserId == null)
-                                    ? Colors.grey[400]
-                                    : (_isFavorite
-                                        ? Colors.amber
-                                        : Colors.grey[400]),
-                            size: 40,
+                          child: Center(
+                            child: Icon(
+                              (_currentUserId == null)
+                                  ? Icons.star_border
+                                  : (_isFavorite
+                                      ? Icons.star
+                                      : Icons.star_border),
+                              color:
+                                  (_currentUserId == null)
+                                      ? const Color(0xFF1D4988)
+                                      : (_isFavorite
+                                          ? Colors.amber
+                                          : const Color(0xFF1D4988)),
+                              size: 28,
+                            ),
                           ),
                         ),
                       ),

@@ -5,7 +5,6 @@ import 'package:semestre5_mobile/widgets/news_filter.dart';
 import 'package:semestre5_mobile/widgets/navbar_user_utilities.dart';
 import 'package:semestre5_mobile/widgets/navbar.dart';
 import 'package:semestre5_mobile/widgets/header.dart';
-// import 'package:semestre5_mobile/pages/news_management_page.dart'; // Certifique-se deste import
 
 class AdmProfilePage extends StatefulWidget {
   const AdmProfilePage({super.key});
@@ -17,41 +16,38 @@ class AdmProfilePage extends StatefulWidget {
 class _AdmProfilePageState extends State<AdmProfilePage> {
   bool _showNewsFilter = false;
   bool _showUserUtilities = false;
-  bool _checkingAccess = true;
+  String? _completeName;
 
   @override
   void initState() {
     super.initState();
-    _validateAdminAccess();
+    _fetchUserName();
   }
 
-  Future<void> _validateAdminAccess() async {
+  Future<void> _fetchUserName() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
-      }
+      setState(() {
+        _completeName = null;
+      });
       return;
     }
-    // Busca documento do usuário pelo campo auth_uid
-    final query =
+    QuerySnapshot<Map<String, dynamic>> query =
         await FirebaseFirestore.instance
             .collection('Users')
             .where('auth_uid', isEqualTo: user.uid)
             .limit(1)
             .get();
 
-    if (query.docs.isEmpty || query.docs.first.data()['userRole'] != 1) {
-      // Se falhar, encerra a sessão e redireciona
-      await FirebaseAuth.instance.signOut();
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
-      }
-      return;
+    if (query.docs.isNotEmpty) {
+      setState(() {
+        _completeName = query.docs.first.data()['completeName'] ?? null;
+      });
+    } else {
+      setState(() {
+        _completeName = null;
+      });
     }
-    setState(() {
-      _checkingAccess = false;
-    });
   }
 
   Future<void> _logout(BuildContext context) async {
@@ -66,10 +62,6 @@ class _AdmProfilePageState extends State<AdmProfilePage> {
     final double height = MediaQuery.of(context).size.height;
     final double navbarHeight = height * 0.12;
 
-    if (_checkingAccess) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
     return Scaffold(
       body: Stack(
         children: [
@@ -78,36 +70,40 @@ class _AdmProfilePageState extends State<AdmProfilePage> {
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Icon(
                     Icons.admin_panel_settings,
-                    size: 80,
-                    color: Color(0xFF1D4988),
-                  ), // Ícone de admin
-                  const SizedBox(height: 16),
+                    size: 120,
+                    color: const Color(0xFF1D4988),
+                  ),
+                  const SizedBox(height: 24),
                   Text(
-                    user?.email ?? 'Usuário',
+                    _completeName ?? user?.email ?? 'Usuário',
                     style: const TextStyle(
-                      fontSize: 20,
+                      fontSize: 32,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Nível de acesso: Administrador',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF1D4988),
-                      fontWeight: FontWeight.w600,
+                  if (user?.email != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0, bottom: 0),
+                      child: Text(
+                        user!.email!,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          color: Color(0xFF1D4988),
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.newspaper),
                     label: const Text('Gerenciar Notícias'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFFF9F9F9),
-                      foregroundColor: Color(0xFF1D4988),
+                      backgroundColor: const Color(0xFF1D4988), // Fundo azul
+                      foregroundColor: Colors.white, // Fonte branca
                       side: const BorderSide(
                         color: Color(0xFF1D4988),
                         width: 2,
@@ -122,9 +118,9 @@ class _AdmProfilePageState extends State<AdmProfilePage> {
                       textStyle: const TextStyle(fontSize: 18),
                     ),
                     onPressed: () {
-                      Navigator.of(context).pushNamed(
-                        '/perfil/adm/gerenciamento-noticias',
-                      ); // Corrigido aqui
+                      Navigator.of(
+                        context,
+                      ).pushNamed('/perfil/adm/gerenciamento-noticias');
                     },
                   ),
                   const SizedBox(height: 16),
@@ -132,8 +128,8 @@ class _AdmProfilePageState extends State<AdmProfilePage> {
                     icon: const Icon(Icons.group),
                     label: const Text('Gerenciar Usuários'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFFF9F9F9),
-                      foregroundColor: Color(0xFF1D4988),
+                      backgroundColor: const Color(0xFF1D4988), // Fundo azul
+                      foregroundColor: Colors.white, // Fonte branca
                       side: const BorderSide(
                         color: Color(0xFF1D4988),
                         width: 2,
@@ -155,16 +151,24 @@ class _AdmProfilePageState extends State<AdmProfilePage> {
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
-                    icon: const Icon(Icons.logout),
+                    icon: const Icon(Icons.logout, color: Color(0xFF1D4988)),
                     label: const Text('Logout'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1D4988),
-                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF1D4988),
+                      side: const BorderSide(
+                        color: Color(0xFF1D4988),
+                        width: 2,
+                      ),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 32,
                         vertical: 16,
                       ),
                       textStyle: const TextStyle(fontSize: 18),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      elevation: 0,
                     ),
                     onPressed: () => _logout(context),
                   ),

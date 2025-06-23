@@ -74,25 +74,60 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
         return;
       }
 
-      // Buscar userRole no Firestore
-      final userDoc =
+      // Buscar userRole no Firestore (busca robusta)
+      final user = userCredential.user!;
+      QuerySnapshot<Map<String, dynamic>> userDoc =
           await FirebaseFirestore.instance
               .collection('Users')
-              .where('email', isEqualTo: _email.trim())
+              .where('auth_uid', isEqualTo: user.uid)
               .limit(1)
               .get();
 
-      int userRole = 0; // padrão admin
+      print('Consulta por auth_uid: ${user.uid}');
+      if (userDoc.docs.isNotEmpty) {
+        print('Documento encontrado: ${userDoc.docs.first.data()}');
+        print('userRole: ${userDoc.docs.first.data()['userRole']}');
+      }
+
+      if (userDoc.docs.isEmpty) {
+        userDoc =
+            await FirebaseFirestore.instance
+                .collection('Users')
+                .where('id', isEqualTo: user.uid)
+                .limit(1)
+                .get();
+        print('Consulta por id: ${user.uid}');
+        if (userDoc.docs.isNotEmpty) {
+          print('Documento encontrado: ${userDoc.docs.first.data()}');
+          print('userRole: ${userDoc.docs.first.data()['userRole']}');
+        }
+      }
+      if (userDoc.docs.isEmpty) {
+        userDoc =
+            await FirebaseFirestore.instance
+                .collection('Users')
+                .where('email', isEqualTo: user.email)
+                .limit(1)
+                .get();
+        print('Consulta por email: ${user.email}');
+        if (userDoc.docs.isNotEmpty) {
+          print('Documento encontrado: ${userDoc.docs.first.data()}');
+          print('userRole: ${userDoc.docs.first.data()['userRole']}');
+        }
+      }
+
+      int userRole = 0; // padrão leitor
       if (userDoc.docs.isNotEmpty &&
           userDoc.docs.first.data().containsKey('userRole')) {
-        userRole = userDoc.docs.first['userRole'] ?? 1;
+        userRole = userDoc.docs.first['userRole'] ?? 0;
       }
+
+      print('userRole final utilizado para navegação: $userRole');
 
       setState(() {
         _loading = false;
       });
       widget.onClose();
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -100,12 +135,12 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
             backgroundColor: Colors.green,
           ),
         );
-        if (userRole == 1) {
+        if (userRole == 0) {
+          Navigator.of(context).pushReplacementNamed('/perfil/leitor');
+        } else if (userRole == 1) {
           Navigator.of(context).pushReplacementNamed('/perfil/adm');
         } else if (userRole == 2) {
           Navigator.of(context).pushReplacementNamed('/perfil/autor');
-        } else if (userRole == 0) {
-          Navigator.of(context).pushReplacementNamed('/perfil/leitor');
         } else {
           Navigator.of(context).pushReplacementNamed('/perfil/leitor');
         }
@@ -167,6 +202,7 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
       // Cria documento na collection Users
       await FirebaseFirestore.instance.collection('Users').doc(guid).set({
         'id': guid,
+        'auth_uid': userCredential.user!.uid, // Adicione esta linha
         'userRole': 0, // padrão agora é 0
         'completeName': _registerName.trim(),
         'email': _registerEmail.trim(),
@@ -236,6 +272,50 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _printUserDocument();
+  }
+
+  Future<void> _printUserDocument() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    QuerySnapshot<Map<String, dynamic>> query =
+        await FirebaseFirestore.instance
+            .collection('Users')
+            .where('auth_uid', isEqualTo: user.uid)
+            .limit(1)
+            .get();
+
+    if (query.docs.isEmpty) {
+      query =
+          await FirebaseFirestore.instance
+              .collection('Users')
+              .where('id', isEqualTo: user.uid)
+              .limit(1)
+              .get();
+    }
+
+    if (query.docs.isEmpty) {
+      query =
+          await FirebaseFirestore.instance
+              .collection('Users')
+              .where('email', isEqualTo: user.email)
+              .limit(1)
+              .get();
+    }
+
+    if (query.docs.isNotEmpty) {
+      print('Documento do usuário autenticado: ${query.docs.first.data()}');
+    } else {
+      print(
+        'Nenhum documento de usuário encontrado para o usuário autenticado.',
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (!widget.showOffcanvas) return const SizedBox.shrink();
 
@@ -297,17 +377,19 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
                 border: offcanvasBorder,
                 borderRadius:
                     width > 576
+                        // Desktop/tablet: arredonda apenas os cantos inferiores
                         ? const BorderRadius.only(
                           bottomLeft: Radius.circular(12),
                           bottomRight: Radius.circular(12),
                           topLeft: Radius.circular(0),
                           topRight: Radius.circular(0),
                         )
+                        // Mobile: arredonda apenas os cantos superiores
                         : const BorderRadius.only(
                           topLeft: Radius.circular(12),
                           topRight: Radius.circular(12),
-                          bottomLeft: Radius.circular(12),
-                          bottomRight: Radius.circular(12),
+                          bottomLeft: Radius.circular(0),
+                          bottomRight: Radius.circular(0),
                         ),
                 boxShadow: [
                   BoxShadow(
@@ -769,10 +851,6 @@ class _NavbarUserUtilitiesState extends State<NavbarUserUtilities> {
                                       return 'A senha deve ter pelo menos 8 caracteres';
                                     if (value.length > 32)
                                       return 'A senha deve ter no máximo 32 caracteres';
-                                    final strength = _passwordStrength(value);
-                                    if (strength == 'Fraca') {
-                                      return 'Senha fraca. Use letras maiúsculas, minúsculas, números e símbolos.';
-                                    }
                                     return null;
                                   },
                                   onChanged:

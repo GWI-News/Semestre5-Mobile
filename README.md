@@ -5,14 +5,14 @@ Repositório para desenvolvimento do software GWI News, para o cumprimento do Pr
 
 ## Documentação do arquivo `main.dart`
 
-O arquivo `main.dart` é o ponto de entrada da aplicação Flutter **GWI News**. Ele é responsável por inicializar o Firebase e configurar as rotas principais do aplicativo.
+O arquivo `main.dart` é o ponto de entrada da aplicação Flutter **GWI News**. Ele é responsável por inicializar o Firebase e configurar todas as rotas principais do aplicativo, incluindo páginas de dashboard, perfis de usuário, gerenciamento de notícias e usuários.
 
 ### Estrutura
 
 - **Importações**
   - `flutter/material.dart`: Biblioteca principal do Flutter para construção da interface.
   - `firebase_core.dart`: Necessário para inicializar o Firebase.
-  - `news_dashboard_page.dart`: Página principal do dashboard de notícias.
+  - Páginas do app: Importa todas as páginas principais, como dashboard, perfis, gerenciamento, etc.
   - `firebase_options.dart`: Configurações do Firebase geradas automaticamente.
 
 ### Função principal
@@ -43,6 +43,23 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => const NewsDashboardPage(),
         '/home': (context) => const NewsDashboardPage(),
+        '/sobre': (context) => const AboutUsPage(),
+        '/faq': (context) => const FaqPage(),
+        '/perfil/adm': (context) => const AdmProfilePage(),
+        '/perfil/autor': (context) => const AuthorProfilePage(),
+        '/perfil/leitor': (context) => const ReaderProfilePage(),
+        '/perfil/adm/gerenciamento-noticias':
+            (context) => const NewsManagementPage(),
+        '/perfil/adm/gerenciamento-noticias/criacao-noticia':
+            (context) => const NewsCreatePage(),
+        '/perfil/adm/gerenciamento-noticias/edicao-noticia': (context) {
+          final args =
+              ModalRoute.of(context)!.settings.arguments
+                  as Map<String, dynamic>;
+          return NewsUpdatePage(newsId: args['newsId']);
+        },
+        '/perfil/adm/gerenciamento-usuarios':
+            (context) => const UserManagementPage(),
       },
     );
   }
@@ -57,6 +74,15 @@ class MyApp extends StatelessWidget {
 - **routes**: 
   - `'/'`: Página inicial, carrega `NewsDashboardPage`.
   - `'/home'`: Também carrega `NewsDashboardPage`.
+  - `'/sobre'`: Página "Sobre Nós".
+  - `'/faq'`: Página de perguntas frequentes.
+  - `'/perfil/adm'`: Página de perfil do administrador.
+  - `'/perfil/autor'`: Página de perfil do autor.
+  - `'/perfil/leitor'`: Página de perfil do leitor.
+  - `'/perfil/adm/gerenciamento-noticias'`: Página de gerenciamento de notícias.
+  - `'/perfil/adm/gerenciamento-noticias/criacao-noticia'`: Página de criação de notícia.
+  - `'/perfil/adm/gerenciamento-noticias/edicao-noticia'`: Página de edição de notícia (recebe argumento `newsId`).
+  - `'/perfil/adm/gerenciamento-usuarios'`: Página de gerenciamento de usuários.
 
 ---
 
