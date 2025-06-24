@@ -34,131 +34,151 @@ class Navbar extends StatelessWidget {
       iconSize = containerHeight * 0.45;
       labelFontSize = containerHeight * 0.22;
       itemVerticalPadding = containerHeight * 0.08;
-    } else if (width <= 992) {
-      containerWidth = width * 0.6;
-      containerHeight = height * 0.12;
-      containerAlignment = Alignment.topRight;
-      border = const Border(
-        bottom: BorderSide(color: Color(0xFF1D4988), width: 4.0),
-      );
+    } else {
+      // Para breakpoints maiores que 576px, não aplica border bottom
+      if (width <= 992) {
+        containerWidth = width * 0.6;
+        containerHeight = height * 0.12;
+        containerAlignment = Alignment.topRight;
+      } else {
+        containerWidth = width * 0.4;
+        containerHeight = height * 0.12;
+        containerAlignment = Alignment.topRight;
+      }
+      border = null; // Remove border bottom
       containerPadding = EdgeInsets.symmetric(vertical: containerHeight * 0.04);
       iconSize = containerHeight * 0.4;
       labelFontSize = containerHeight * 0.22;
       itemVerticalPadding = containerHeight * 0.08;
-    } else {
-      containerWidth = width * 0.4;
-      containerHeight = height * 0.12;
-      containerAlignment = Alignment.topRight;
-      border = const Border(
-        bottom: BorderSide(color: Color(0xFF1D4988), width: 4.0),
-      );
-      containerPadding = EdgeInsets.symmetric(vertical: containerHeight * 0.04);
-      iconSize = containerHeight * 0.4;
-      labelFontSize = containerHeight * 0.18;
-      itemVerticalPadding = containerHeight * 0.08;
     }
 
-    return Align(
-      alignment: containerAlignment,
-      child: Container(
-        width: containerWidth < 320 ? 320 : containerWidth,
-        height: containerHeight,
-        constraints: const BoxConstraints(minWidth: 320),
-        decoration: BoxDecoration(
-          color: const Color(0xFFEBEBEB),
-          border: border,
+    // Adicione um Material com tipo 'transparency' e um Stack com Positioned.fill para garantir z-index alto
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: IgnorePointer(
+            ignoring: true,
+            child: Container(), // camada base transparente
+          ),
         ),
-        padding: containerPadding,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            _NavbarIcon(
-              icon: Icons.home_rounded,
-              label: 'Home',
-              onTap: () {
-                Navigator.of(context).pushNamed('/home');
-              },
-              iconSize: iconSize,
-              labelFontSize: labelFontSize,
-              verticalPadding: itemVerticalPadding,
-            ),
-            _NavbarIcon(
-              icon: Icons.filter_alt_rounded,
-              label: 'Filtro',
-              onTap: onFilterTap ?? () {},
-              iconSize: iconSize,
-              labelFontSize: labelFontSize,
-              verticalPadding: itemVerticalPadding,
-            ),
-            _NavbarIcon(
-              icon: Icons.info_rounded,
-              label: 'Sobre',
-              onTap: () {
-                Navigator.of(context).pushNamed('/sobre');
-              },
-              iconSize: iconSize,
-              labelFontSize: labelFontSize,
-              verticalPadding: itemVerticalPadding,
-            ),
-            _NavbarIcon(
-              icon: Icons.person_rounded,
-              label: 'Perfil',
-              onTap: () async {
-                final user = FirebaseAuth.instance.currentUser;
-                if (user != null && user.emailVerified) {
-                  // Busca robusta do userRole
-                  QuerySnapshot<Map<String, dynamic>> userDoc =
-                      await FirebaseFirestore.instance
-                          .collection('Users')
-                          .where('auth_uid', isEqualTo: user.uid)
-                          .limit(1)
-                          .get();
+        Positioned(
+          top: containerAlignment == Alignment.bottomCenter ? null : 0,
+          bottom: containerAlignment == Alignment.bottomCenter ? 0 : null,
+          left: 0,
+          right: 0,
+          child: Material(
+            type: MaterialType.transparency,
+            elevation: 20, // z-index alto
+            child: Align(
+              alignment: containerAlignment,
+              child: Container(
+                width: containerWidth < 320 ? 320 : containerWidth,
+                height: containerHeight,
+                constraints: const BoxConstraints(minWidth: 320),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEBEBEB),
+                  border: border,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _NavbarIcon(
+                      icon: Icons.home_rounded,
+                      label: 'Home',
+                      onTap: () {
+                        Navigator.of(context).pushNamed('/home');
+                      },
+                      iconSize: iconSize,
+                      labelFontSize: labelFontSize,
+                      verticalPadding: itemVerticalPadding,
+                    ),
+                    _NavbarIcon(
+                      icon: Icons.filter_alt_rounded,
+                      label: 'Filtro',
+                      onTap: onFilterTap ?? () {},
+                      iconSize: iconSize,
+                      labelFontSize: labelFontSize,
+                      verticalPadding: itemVerticalPadding,
+                    ),
+                    _NavbarIcon(
+                      icon: Icons.info_rounded,
+                      label: 'Sobre',
+                      onTap: () {
+                        Navigator.of(context).pushNamed('/sobre');
+                      },
+                      iconSize: iconSize,
+                      labelFontSize: labelFontSize,
+                      verticalPadding: itemVerticalPadding,
+                    ),
+                    _NavbarIcon(
+                      icon: Icons.person_rounded,
+                      label: 'Perfil',
+                      onTap: () async {
+                        final user = FirebaseAuth.instance.currentUser;
+                        if (user != null && user.emailVerified) {
+                          // Busca robusta do userRole
+                          QuerySnapshot<Map<String, dynamic>> userDoc =
+                              await FirebaseFirestore.instance
+                                  .collection('Users')
+                                  .where('auth_uid', isEqualTo: user.uid)
+                                  .limit(1)
+                                  .get();
 
-                  if (userDoc.docs.isEmpty) {
-                    userDoc =
-                        await FirebaseFirestore.instance
-                            .collection('Users')
-                            .where('id', isEqualTo: user.uid)
-                            .limit(1)
-                            .get();
-                  }
-                  if (userDoc.docs.isEmpty) {
-                    userDoc =
-                        await FirebaseFirestore.instance
-                            .collection('Users')
-                            .where('email', isEqualTo: user.email)
-                            .limit(1)
-                            .get();
-                  }
+                          if (userDoc.docs.isEmpty) {
+                            userDoc =
+                                await FirebaseFirestore.instance
+                                    .collection('Users')
+                                    .where('id', isEqualTo: user.uid)
+                                    .limit(1)
+                                    .get();
+                          }
+                          if (userDoc.docs.isEmpty) {
+                            userDoc =
+                                await FirebaseFirestore.instance
+                                    .collection('Users')
+                                    .where('email', isEqualTo: user.email)
+                                    .limit(1)
+                                    .get();
+                          }
 
-                  int userRole = 0; // padrão leitor
-                  if (userDoc.docs.isNotEmpty &&
-                      userDoc.docs.first.data().containsKey('userRole')) {
-                    userRole = userDoc.docs.first['userRole'] ?? 0;
-                  }
+                          int userRole = 0; // padrão leitor
+                          if (userDoc.docs.isNotEmpty &&
+                              userDoc.docs.first.data().containsKey(
+                                'userRole',
+                              )) {
+                            userRole = userDoc.docs.first['userRole'] ?? 0;
+                          }
 
-                  if (userRole == 1) {
-                    Navigator.of(context).pushReplacementNamed('/perfil/adm');
-                  } else if (userRole == 2) {
-                    Navigator.of(context).pushReplacementNamed('/perfil/autor');
-                  } else {
-                    Navigator.of(
-                      context,
-                    ).pushReplacementNamed('/perfil/leitor');
-                  }
-                } else {
-                  // Usuário não autenticado: abre o offcanvas de login
-                  if (onUserTap != null) onUserTap!();
-                }
-              },
-              iconSize: iconSize,
-              labelFontSize: labelFontSize,
-              verticalPadding: itemVerticalPadding,
+                          if (userRole == 1) {
+                            Navigator.of(
+                              context,
+                            ).pushReplacementNamed('/perfil/adm');
+                          } else if (userRole == 2) {
+                            Navigator.of(
+                              context,
+                            ).pushReplacementNamed('/perfil/autor');
+                          } else {
+                            Navigator.of(
+                              context,
+                            ).pushReplacementNamed('/perfil/leitor');
+                          }
+                        } else {
+                          // Usuário não autenticado: abre o offcanvas de login
+                          if (onUserTap != null) onUserTap!();
+                        }
+                      },
+                      iconSize: iconSize,
+                      labelFontSize: labelFontSize,
+                      verticalPadding: itemVerticalPadding,
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }

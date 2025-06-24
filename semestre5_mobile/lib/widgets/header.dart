@@ -41,46 +41,51 @@ class Header extends StatelessWidget {
     final double logoMaxWidth =
         containerWidth - (padding is EdgeInsets ? padding.left : 0);
 
-    return Align(
-      alignment: containerAlignment,
-      child: Container(
-        width: containerWidth < 320 ? 320 : containerWidth,
-        constraints: const BoxConstraints(minWidth: 320),
-        height: headerHeight,
-        decoration: const BoxDecoration(
-          color: Color(0xFFEBEBEB),
-          border: Border(
-            bottom: BorderSide(color: Color(0xFF1D4988), width: 4.0),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: rowAlignment,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Padding(
-              padding: padding,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: logoMaxHeight,
-                  maxWidth: logoMaxWidth > 0 ? logoMaxWidth : containerWidth,
-                ),
-                child: AspectRatio(
-                  aspectRatio: 4,
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.of(context).maybePop();
-                    },
-                    child: SvgPicture.asset(
-                      'assets/GwiNewsLogo.svg',
-                      fit: BoxFit.contain,
+    return Stack(
+      children: [
+        Align(
+          alignment: containerAlignment,
+          child: SizedBox(
+            width: containerWidth < 320 ? 320 : containerWidth,
+            height: headerHeight,
+            child: Row(
+              mainAxisAlignment: rowAlignment,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: padding,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: logoMaxHeight,
+                      maxWidth:
+                          logoMaxWidth > 0 ? logoMaxWidth : containerWidth,
+                    ),
+                    child: AspectRatio(
+                      aspectRatio: 4,
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.of(context).maybePop();
+                        },
+                        child: SvgPicture.asset(
+                          'assets/GwiNewsLogo.svg',
+                          fit: BoxFit.contain,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+        // Linha azul agora fica abaixo do header, ocupando 100% da largura da tela
+        Positioned(
+          left: 0,
+          right: 0,
+          top: headerHeight,
+          child: Container(height: 4, color: const Color(0xFF1D4988)),
+        ),
+      ],
     );
   }
 }
